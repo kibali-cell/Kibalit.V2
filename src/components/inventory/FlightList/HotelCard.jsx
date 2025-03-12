@@ -9,7 +9,7 @@ const HotelCard = ({ hotel, onClick }) => {
       setIsFavorite(!isFavorite);
     };
   
-    return (
+    return ( 
       <div 
         className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer flex" 
         onClick={onClick}
@@ -57,7 +57,7 @@ const HotelCard = ({ hotel, onClick }) => {
               {hotel.nights} nights, {hotel.guests} adults
             </div>
             <div className="text-right">
-              <p className="text-lg font-bold">Tsh {hotel.price.toLocaleString()}</p>
+              <p className="text-lg font-bold">Tsh {hotel.price}</p>
             </div>
           </div>
   

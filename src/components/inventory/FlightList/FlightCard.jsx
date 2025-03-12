@@ -41,4 +41,4 @@ const FlightCard = ({ flight, onClick }) => {
   );
 };
 
-export default FlightCard
+export default FlightCard;

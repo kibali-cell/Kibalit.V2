@@ -8,6 +8,8 @@ const HomePage = () => {
   const [tripType, setTripType] = useState("Return");
   const [activeTab, setActiveTab] = useState("Flights");
   const [showInventory, setShowInventory] = useState(false);
+  const [hotels, setHotels] = useState([]);
+  const [searchResults, setSearchResults] = useState(null);
 
   const handleAddTraveler = () => {
     setTravelers([...travelers, "New Traveler"]);
@@ -25,10 +27,10 @@ const HomePage = () => {
 
   return (
     <>
+      {/* Search Form Section */}
       <div className={`flex flex-col h-full bg-stroke-lightGreyBg md:px-32 ${showInventory ? 'hidden' : ''}`}>
         <div className="w-full max-w-5xl">
           <h1 className="text-heading-1 md:text-7xl font-bold my-16">Book Your Trip</h1>
-
           <div className="flex">
             {tabs.map((tab) => (
               <button
@@ -39,9 +41,9 @@ const HomePage = () => {
                     ? "bg-white text-primaryBg"
                     : "bg-black text-white hover:bg-gray-200"
                 } ${
-                  tab.name === "Flights" 
-                    ? "rounded-tl-lg" 
-                    : tab.name === "Buses" 
+                  tab.name === "Flights"
+                    ? "rounded-tl-lg"
+                    : tab.name === "Buses"
                     ? "rounded-tr-lg"
                     : ""
                 }`}
@@ -51,7 +53,6 @@ const HomePage = () => {
               </button>
             ))}
           </div>
-
           <div className="bg-white rounded-b-xl p-4 flex flex-col flex-grow overflow-y-auto">
             <SearchForm
               activeTab={activeTab}
@@ -60,18 +61,27 @@ const HomePage = () => {
               onRemoveTraveler={handleRemoveTraveler}
               tripType={tripType}
               setTripType={setTripType}
-              setShowInventory={setShowInventory}
+              setShowInventory={setShowInventory}  
+              onHotelsFetched={(data) => {
+                setSearchResults(data);
+                setShowInventory(true);
+              }}
+              onClose={() => {}}
             />
           </div>
         </div>
       </div>
 
+      {/* Inventory Section */}
       {showInventory && (
-        <FlightInventory 
-          isVisible={showInventory} 
+        <FlightInventory
+          isVisible={showInventory}
           onClose={() => setShowInventory(false)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
+          hotels={hotels}
+          setShowInventory={setShowInventory} 
+          initialHotelsData={searchResults}
         />
       )}
     </>

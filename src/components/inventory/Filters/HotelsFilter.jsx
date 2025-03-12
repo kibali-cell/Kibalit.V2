@@ -157,7 +157,7 @@ const HotelsFilter = ({
                     priceRange: { ...filters.priceRange, max: e.target.value }
                   })}
                   className="w-full p-2 border rounded-md text-sm"
-                  disabled={isLoading}
+                  disabled={isLoading} 
                 />
               </div>
             </div>
