@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { FaPlaneDeparture, FaPlaneArrival, FaBus, FaLocationDot } from "react-icons/fa6";
 import { MdClose, MdPersonAdd } from "react-icons/md";
-import { IoLocationOutline, IoCalendarOutline, IoPeopleOutline, IoSearchOutline, IoArrowBack } from 'react-icons/io5';
+import { IoLocationOutline, IoCalendarOutline, IoPeopleOutline } from 'react-icons/io5';
 
-// Input configurations for other tabs remain unchanged
+// Input configurations for each tab
 const inputConfigs = {
   Flights: {
     fields: (tripType) => [
@@ -11,86 +11,53 @@ const inputConfigs = {
         icon: <FaPlaneDeparture />,
         placeholder: "From",
         type: "text",
+        name: "origin",
         className: "bg-appBg min-w-[200px]"
       },
       {
         icon: <FaPlaneArrival />,
         placeholder: "To",
         type: "text",
+        name: "destination",
         className: "bg-appBg min-w-[200px]"
       },
       {
-        icon: "🗓️",
+        icon: <IoCalendarOutline />,
         placeholder: "Depart",
-        type: "text",
+        type: "date", // Changed to "date"
+        name: "depart",
         className: "bg-appBg min-w-[150px]"
       },
-      ...(tripType === "Return" ? [{
-        icon: "🗓️",
-        placeholder: "Return",
-        type: "text",
-        className: "bg-appBg min-w-[150px]"
-      }] : [])
+      ...(tripType === "Return"
+        ? [
+            {
+              icon: <IoCalendarOutline />,
+              placeholder: "Return",
+              type: "date", // Changed to "date"
+              name: "return",
+              className: "bg-appBg min-w-[150px]"
+            }
+          ]
+        : [])
     ],
     containerClass: "flex flex-nowrap overflow-x-auto gap-3 pb-2"
   },
-  Hotels: {
-    // We'll override this for Hotels tab with controlled inputs
-    fields: () => [
-      {
-        icon: <FaLocationDot />,
-        placeholder: "Where to?",
-        type: "text",
-        className: "bg-appBg w-1/2"
-      },
-      {
-        icon: "🗓️",
-        placeholder: "Check-in",
-        type: "text",
-        className: "bg-appBg w-1/4"
-      },
-      {
-        icon: "🗓️",
-        placeholder: "Check-out",
-        type: "text",
-        className: "bg-appBg w-1/4"
-      }
-    ],
-    containerClass: "flex flex-nowrap overflow-x-auto gap-3 pb-2"
-  },
-  Buses: {
-    fields: () => [
-      {
-        icon: <FaBus />,
-        placeholder: "From",
-        type: "text",
-        className: "bg-appBg min-w-[200px]"
-      },
-      {
-        icon: <FaBus />,
-        placeholder: "To",
-        type: "text",
-        className: "bg-appBg min-w-[200px]"
-      },
-      {
-        icon: "🗓️",
-        placeholder: "Departure Date",
-        type: "text",
-        className: "bg-appBg min-w-[150px]"
-      }
-    ],
-    containerClass: "flex flex-nowrap overflow-x-auto gap-3 pb-2"
-  }
+  // ... other tabs
 };
 
-const InputField = ({ icon, placeholder, type = "text", className = "" }) => (
+const InputField = ({ icon, placeholder, type = "text", className = "", name }) => (
   <div className={`flex items-center space-x-2 border border-stroke-lightGreyBg p-2 rounded-lg ${className}`}>
     {icon && <span className="text-gray-500 text-sm">{icon}</span>}
-    <input type={type} placeholder={placeholder} className="w-full bg-transparent focus:outline-none placeholder-gray-400 text-sm" />
+    <input
+      name={name}
+      type={type}
+      placeholder={placeholder}
+      className="w-full bg-transparent focus:outline-none placeholder-gray-400 text-sm"
+    />
   </div>
 );
 
-const TravelersSection = ({ travelers, onAddTraveler, onRemoveTraveler }) => (
+const TravelersSection = ({ travelers = [], onAddTraveler, onRemoveTraveler }) => (
   <div>
     <p className="text-base font-semibold text-primaryText mb-1">Who's going?</p>
     <div className="flex items-center space-x-2 border border-stroke-lightGreyBg bg-white rounded-lg p-2">
@@ -109,7 +76,6 @@ const TravelersSection = ({ travelers, onAddTraveler, onRemoveTraveler }) => (
 );
 
 const renderTravelerOptions = () => {
-  // For simplicity, using a fixed list
   const options = ["1 traveler", "2 travelers", "3 travelers", "4 travelers"];
   return options.map((option) => (
     <option key={option} value={option.split(" ")[0]}>
@@ -119,7 +85,7 @@ const renderTravelerOptions = () => {
 };
 
 const renderClassOptions = () => {
-  // Only applicable for Flights; otherwise return null
+  // Only applicable for Flights
   return (
     <select className="p-2 w-full outline-none text-sm">
       {["Economy", "Business", "First Class"].map((classType) => (
@@ -137,21 +103,19 @@ const SearchForm = ({
   tripType,
   setTripType,
   setShowInventory,
-  onHotelsFetched
+  onResultsFetched, // renamed callback prop
+  onClose
 }) => {
   // Controlled states for Hotels tab
   const [hotelCity, setHotelCity] = useState("");
   const [hotelCheckIn, setHotelCheckIn] = useState("");
   const [hotelCheckOut, setHotelCheckOut] = useState("");
-  const [internalActiveTab, setInternalActiveTab] = useState(activeTab);
 
-  // For non-Hotels tabs, we use inputConfigs
   const currentConfig = inputConfigs[activeTab];
-
-  const actualActiveTab = activeTab || internalActiveTab;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (activeTab === "Hotels") {
       if (!hotelCity || !hotelCheckIn || !hotelCheckOut) {
         alert("Please fill in all hotel search fields.");
@@ -162,25 +126,62 @@ const SearchForm = ({
           city_code: hotelCity.toUpperCase(),
           check_in: hotelCheckIn,
           check_out: hotelCheckOut,
-          adults: 1 // You can update this value if you want to include traveler count
+          adults: 1,
+          cabin_class: "economy",
+          currency: "USD"
         });
         const response = await fetch(`http://localhost:8000/api/hotels/search?${queryParams.toString()}`);
         if (!response.ok) {
           throw new Error("Failed to fetch hotels");
         }
         const data = await response.json();
-        
-        // Make sure this data is passed to the parent component
-        onHotelsFetched(data.hotel_list.data);
-        
-        // Show the inventory after fetching data
+        onResultsFetched(data.hotel_list.data);
         setShowInventory(true);
       } catch (error) {
         console.error("Hotel search error:", error);
         alert("Error fetching hotels");
       }
+    } else if (activeTab === "Flights") {
+      // For flights, extract values from the form using FormData
+      const formData = new FormData(e.target);
+      // Standardize flight type so that "One way" becomes "oneway" and "Return" becomes "return"
+      const standardizedTripType = tripType.toLowerCase().replace(/\s/g, '');
+      const flightPayload = {
+        flight_type: standardizedTripType, // "oneway" or "return"
+        origin: formData.get("origin")?.toUpperCase() || "",
+        destination: formData.get("destination")?.toUpperCase() || "",
+        departure_date: formData.get("depart") || "",
+        return_date: standardizedTripType === "return" ? formData.get("return") : null,
+        adults: 1,
+        cabin_class: "economy",
+        currency: "USD"
+      };
+
+      if (!flightPayload.origin || !flightPayload.destination || !flightPayload.departure_date) {
+        alert("Please fill in all flight search fields.");
+        return;
+      }
+      
+      try {
+        console.log("Flight Payload:", flightPayload);
+        const response = await fetch("http://localhost:8000/api/flights/search", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(flightPayload)
+        });
+        if (!response.ok) {
+          throw new Error("Failed to search flights");
+        }
+        const data = await response.json();
+        onResultsFetched(data.data);
+        setShowInventory(true);
+      } catch (error) {
+        console.error("Flight search error:", error);
+        alert("Error searching flights");
+      }
     } else {
-      // For other tabs, just show inventory (or do other actions)
       setShowInventory(true);
     }
   };
@@ -228,7 +229,7 @@ const SearchForm = ({
               className="w-full pl-10 pr-4 py-3 bg-white rounded-md border border-gray-300 focus:outline-none"
             />
           </div>
-          {/* Travelers - here we leave it uncontrolled */}
+          {/* Travelers (uncontrolled) */}
           <div className="relative">
             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
               <IoPeopleOutline className="w-5 h-5" />
@@ -254,6 +255,7 @@ const SearchForm = ({
             placeholder={field.placeholder}
             type={field.type}
             className={field.className}
+            name={field.name}
           />
         ))}
       </div>
@@ -276,10 +278,11 @@ const SearchForm = ({
                 type="button"
                 key={type}
                 onClick={() => setTripType(type)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${tripType === type
-                  ? "bg-black text-white"
-                  : "bg-gray-200 text-primaryText hover:bg-gray-300"
-                  }`}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  tripType === type
+                    ? "bg-black text-white"
+                    : "bg-gray-200 text-primaryText hover:bg-gray-300"
+                }`}
               >
                 {type}
               </button>

@@ -8,7 +8,6 @@ const HomePage = () => {
   const [tripType, setTripType] = useState("Return");
   const [activeTab, setActiveTab] = useState("Flights");
   const [showInventory, setShowInventory] = useState(false);
-  const [hotels, setHotels] = useState([]);
   const [searchResults, setSearchResults] = useState(null);
 
   const handleAddTraveler = () => {
@@ -61,8 +60,8 @@ const HomePage = () => {
               onRemoveTraveler={handleRemoveTraveler}
               tripType={tripType}
               setTripType={setTripType}
-              setShowInventory={setShowInventory}  
-              onHotelsFetched={(data) => {
+              setShowInventory={setShowInventory}
+              onResultsFetched={(data) => {
                 setSearchResults(data);
                 setShowInventory(true);
               }}
@@ -79,9 +78,8 @@ const HomePage = () => {
           onClose={() => setShowInventory(false)}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          hotels={hotels}
-          setShowInventory={setShowInventory} 
-          initialHotelsData={searchResults}
+          setShowInventory={setShowInventory}
+          initialResults={searchResults}
         />
       )}
     </>

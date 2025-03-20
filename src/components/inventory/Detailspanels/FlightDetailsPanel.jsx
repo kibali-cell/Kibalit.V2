@@ -1,15 +1,46 @@
 import { IoClose } from 'react-icons/io5';
-import { useState } from 'react';
-import { IoCloseCircleOutline } from "react-icons/io5";
+import { useState, useEffect } from 'react';
+import { IoCloseCircleOutline } from 'react-icons/io5';
 import FlightExtrasPanel from './FlightExtrasPanel';
 
-const FlightDetailsPanel = ({ isOpen, onClose }) => {
+const FlightDetailsPanel = ({ isOpen, onClose, flight }) => {
   const [isExtrasOpen, setIsExtrasOpen] = useState(false);
-  if (!isOpen) return null;
+
+  // Log flight prop for debugging
+  useEffect(() => {
+    console.log('FlightDetailsPanel flight prop:', flight);
+  }, [flight]);
+
+  if (!isOpen || !flight) return null;
+
+  // Helper function to format ISO date strings to readable time (e.g., "10:00")
+  const formatTime = (isoString) => {
+    if (!isoString) return 'N/A';
+    return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Calculate flight duration in "Xhr Ymins" format
+  const calculateDuration = (departure, arrival) => {
+    if (!departure || !arrival) return 'N/A';
+    const departTime = new Date(departure);
+    const arriveTime = new Date(arrival);
+    const diffMs = arriveTime - departTime;
+    const totalMinutes = Math.round(diffMs / 60000); // Total minutes
+
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    if (hours === 0) return `${minutes}mins`; // e.g., "45mins"
+    return `${hours}hr ${minutes}mins`; // e.g., "1hr 56mins"
+  };
+
+  const duration = calculateDuration(flight.departureTime, flight.arrivalTime);
 
   const PricingCard = ({ price, type }) => (
     <div className="border rounded-lg p-4">
-      <div className="text-lg font-semibold mb-2">Tsh. {price.toLocaleString()}</div>
+      <div className="text-lg font-semibold mb-2">
+        Tsh. {price ? price.toLocaleString() : 'N/A'}
+      </div>
       <div className="text-sm text-gray-600 mb-2">{type}</div>
       <div className="space-y-2 mb-4">
         <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -47,14 +78,17 @@ const FlightDetailsPanel = ({ isOpen, onClose }) => {
           </div>
         </div>
       </div>
-      <button onClick={() => setIsExtrasOpen(true)} className="w-full py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700">
+      <button
+        onClick={() => setIsExtrasOpen(true)}
+        className="w-full py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700"
+      >
         Select
       </button>
     </div>
   );
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 z-50 ">
+    <div className="fixed inset-0 bg-black bg-opacity-30 z-50">
       <div className="absolute right-0 top-0 h-full w-1/2 bg-white transform transition-transform duration-300 ease-in-out shadow-xl text-sm overflow-auto mb-10">
         <div className="p-6">
           {/* Header */}
@@ -67,8 +101,10 @@ const FlightDetailsPanel = ({ isOpen, onClose }) => {
 
           {/* Flight Time and Airline */}
           <div className="mb-6">
-            <div className="text-label-1-semibold">15:45 - 17:00 (30 min)</div>
-            <div className="text-sm text-gray-500">Precision Air</div>
+            <div className="text-label-1-semibold">
+              {formatTime(flight.departureTime)} - {formatTime(flight.arrivalTime)} ({duration})
+            </div>
+            <div className="text-sm text-gray-500">{flight.airline || 'Unknown Airline'}</div>
           </div>
 
           {/* Flight Route Details */}
@@ -76,19 +112,19 @@ const FlightDetailsPanel = ({ isOpen, onClose }) => {
             <div className="flex px-4">
               <div className="space-y-5 font-medium">
                 <div>
-                  <div className="font-medium">15:45 - Dar es salaam</div>
-                  <div className="font-medium">Julius Nyerere Intl (DAR)</div>
+                  <div className="font-medium">{formatTime(flight.departureTime)} - {flight.originCity}</div>
+                  <div className="font-medium">{flight.originCode}</div>
                 </div>
 
                 <div className="space-y-1 mb-6">
-                  <div>30 min flight</div>
-                  <div>Airbus 725</div>
+                  <div>{duration} flight</div>
+                  <div>Airbus 725</div> {/* Replace with flight.aircraft if available */}
                   <div>Economy</div>
                 </div>
 
                 <div>
-                  <div className="font-medium">17:00 - Kilimanjaro</div>
-                  <div className="">Kilimanjaro Intl Airport(KLM)</div>
+                  <div className="font-medium">{formatTime(flight.arrivalTime)} - {flight.destinationCity}</div>
+                  <div>{flight.destinationCode}</div>
                 </div>
               </div>
             </div>
@@ -96,15 +132,15 @@ const FlightDetailsPanel = ({ isOpen, onClose }) => {
 
           {/* Pricing Options */}
           <div className="grid grid-cols-2 gap-4">
-            <PricingCard price={379000} type="Economy" />
-            <PricingCard price={879000} type="Business Class" />
+            <PricingCard price={flight.price} type="Economy" />
+            <PricingCard price={flight.price * 1.5} type="Business Class" /> {/* Example multiplier */}
           </div>
         </div>
       </div>
       <FlightExtrasPanel
         isOpen={isExtrasOpen}
         onClose={() => setIsExtrasOpen(false)}
-        basePrice={379000}
+        basePrice={flight.price || 0}
       />
     </div>
   );

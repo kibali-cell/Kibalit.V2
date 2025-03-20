@@ -13,7 +13,8 @@ const HotelDetailsPanel = ({ isOpen, onClose, hotel }) => {
 
   if (!isOpen || !hotel) return null;
 
-  const amenitiesList = hotel.amenities.split(', ').map(item => item.trim());
+  // const amenitiesList = hotel.amenities.split(', ').map(item => item.trim());
+  const amenitiesList = hotel.amenities || [];
   const totalPrice = hotel.price * hotel.nights;
 
   const renderStars = (count) => {
@@ -151,7 +152,7 @@ const HotelDetailsPanel = ({ isOpen, onClose, hotel }) => {
                   <h4 className="text-lg font-medium">Kibo West Wing Suite No. 6</h4>
                   <p className="text-sm text-gray-600">1 Queen Bed • Sleeps up to 2 • 25 sq ft</p>
                   <button className="text-sm text-blue-600 hover:underline">See details</button>
-                </div> 
+                </div>
               </div>
 
               {/* Refundable Option */}

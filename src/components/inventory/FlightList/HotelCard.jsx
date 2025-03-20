@@ -19,7 +19,7 @@ const HotelCard = ({ hotel, onClick }) => {
             src={hotel.image} 
             alt={hotel.name} 
             className="w-full h-48 object-cover"
-          />
+          /> 
           <button 
             onClick={handleFavorite}
             className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md"
@@ -56,9 +56,11 @@ const HotelCard = ({ hotel, onClick }) => {
             <div className="text-xs text-gray-500">
               {hotel.nights} nights, {hotel.guests} adults
             </div>
-            <div className="text-right">
-              <p className="text-lg font-bold">Tsh {hotel.price}</p>
-            </div>
+            <div className="text-lg font-bold">
+                ${hotel.price?.total || 'N/A'} 
+                <span className="text-sm text-gray-500">/night</span>
+              </div>
+
           </div>
   
           {hotel.policy && (
