@@ -40,11 +40,11 @@ const FlightInventory = ({
       departureTime: firstSegment.departing_at,
       arrivalTime: firstSegment.arriving_at,
       airline: firstSegment.marketing_carrier.name,
+      logo: firstSegment.marketing_carrier.logo, // Add this
       price: apiFlight.total_amount,
       hasPolicy: true
     };
   };
-
   // Map the flight data from searchResults.data, default to empty array if not available
   const mappedFlights = searchResults && searchResults.data ? searchResults.data.map(mapFlightData) : [];
 
