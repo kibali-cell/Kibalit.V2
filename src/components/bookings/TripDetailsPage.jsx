@@ -201,11 +201,11 @@ const TripDetailsPage = ({ isOpen, onClose }) => {
                   {tripData.pricing.flight.travelers} Travelers
                 </p>
                 <p className="text-label-2-medium text-secondaryText">
-                  Price per Traveler: Tsh. {tripData.pricing.flight.perPerson.toLocaleString()}
+                  Price per Traveler: Ksh. {tripData.pricing.flight.perPerson.toLocaleString()}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-label-1-medium">Tsh. {tripData.pricing.flight.price.toLocaleString()}</p>
+                <p className="text-label-1-medium">Ksh. {tripData.pricing.flight.price.toLocaleString()}</p>
                 <span className="text-success-text bg-success-bg px-2 py-1 rounded text-label-2-medium">Paid</span>
               </div>
             </div>
@@ -219,11 +219,11 @@ const TripDetailsPage = ({ isOpen, onClose }) => {
                   {tripData.pricing.stay.nights} nights, {tripData.pricing.stay.rooms} rooms, {tripData.pricing.stay.guests} Guests
                 </p>
                 <p className="text-label-2-medium text-secondaryText">
-                  Price per room per night: Tsh. {tripData.pricing.stay.perRoom.toLocaleString()}
+                  Price per room per night: Ksh. {tripData.pricing.stay.perRoom.toLocaleString()}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-label-1-medium">Tsh. {tripData.pricing.stay.price.toLocaleString()}</p>
+                <p className="text-label-1-medium">Ksh. {tripData.pricing.stay.price.toLocaleString()}</p>
                 <span className="text-success-text bg-success-bg px-2 py-1 rounded text-label-2-medium">Paid</span>
               </div>
             </div>
@@ -231,7 +231,7 @@ const TripDetailsPage = ({ isOpen, onClose }) => {
             <div className="pt-4 border-t border-stroke-lightGreyBg">
               <div className="flex justify-between items-center">
                 <p className="text-label-1-semibold">Total Price</p>
-                <p className="text-label-1-semibold">Tsh. {tripData.pricing.total.toLocaleString()}</p>
+                <p className="text-label-1-semibold">Ksh. {tripData.pricing.total.toLocaleString()}</p>
               </div>
             </div>
           </div>

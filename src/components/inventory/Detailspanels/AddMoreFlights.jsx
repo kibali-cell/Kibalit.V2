@@ -152,7 +152,7 @@ const AddMoreFlights = ({ isOpen, onClose }) => {
             <div className="flex justify-between items-center mb-4">
               <div>
                 <div className="text-sm text-gray-500">Total price of trip</div>
-                <div className="text-xl font-semibold text-gray-900">Tsh. 300,000</div>
+                <div className="text-xl font-semibold text-gray-900">Ksh. 300,000</div>
               </div>
             </div>
             <button className="w-full bg-gray-900 text-white py-3 rounded-lg hover:bg-gray-800 transition-colors"

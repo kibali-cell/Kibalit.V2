@@ -6,7 +6,7 @@ const FlightsFilter = () => {
   const [expandedSections, setExpandedSections] = useState({
     stops: true,
     price: true,
-    flightClass: true,
+    flightClass: true, 
     departureTime: true,
     arrivalTime: true,
     baggage: true,

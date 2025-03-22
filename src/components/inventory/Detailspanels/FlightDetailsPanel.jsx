@@ -39,7 +39,7 @@ const FlightDetailsPanel = ({ isOpen, onClose, flight }) => {
   const PricingCard = ({ price, type }) => (
     <div className="border rounded-lg p-4">
       <div className="text-lg font-semibold mb-2">
-        Tsh. {price ? price.toLocaleString() : 'N/A'}
+        Ksh. {price ? price.toLocaleString() : 'N/A'}
       </div>
       <div className="text-sm text-gray-600 mb-2">{type}</div>
       <div className="space-y-2 mb-4">
