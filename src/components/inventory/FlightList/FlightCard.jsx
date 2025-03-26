@@ -77,8 +77,9 @@ const FlightCard = ({ flight, onClick }) => {
                 Policy
               </span>
             )}
+            
             <span className="px-2 py-1 text-xs rounded-full bg-gray-900 text-white">
-              Ksh {flight.price ? flight.price.toLocaleString() : 'N/A'}
+              {flight.currency} {flight.price ? flight.price.toLocaleString() : 'N/A'}
             </span>
           </div>
         </div>

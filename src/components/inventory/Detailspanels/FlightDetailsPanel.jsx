@@ -26,20 +26,18 @@ const FlightDetailsPanel = ({ isOpen, onClose, flight }) => {
     const arriveTime = new Date(arrival);
     const diffMs = arriveTime - departTime;
     const totalMinutes = Math.round(diffMs / 60000); // Total minutes
-
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
-
-    if (hours === 0) return `${minutes}mins`; // e.g., "45mins"
-    return `${hours}hr ${minutes}mins`; // e.g., "1hr 56mins"
+    return hours === 0 ? `${minutes}mins` : `${hours}hr ${minutes}mins`;
   };
 
   const duration = calculateDuration(flight.departureTime, flight.arrivalTime);
 
-  const PricingCard = ({ price, type }) => (
+  // PricingCard component with dynamic currency
+  const PricingCard = ({ price, type, currency }) => (
     <div className="border rounded-lg p-4">
       <div className="text-lg font-semibold mb-2">
-        Ksh. {price ? price.toLocaleString() : 'N/A'}
+        {currency || 'KES'} {price ? price.toLocaleString() : 'N/A'}
       </div>
       <div className="text-sm text-gray-600 mb-2">{type}</div>
       <div className="space-y-2 mb-4">
@@ -87,6 +85,12 @@ const FlightDetailsPanel = ({ isOpen, onClose, flight }) => {
     </div>
   );
 
+  // Define cabin classes with multipliers (placeholder until API provides real data)
+  const cabinClasses = [
+    { type: 'Economy', multiplier: 1 },
+    { type: 'Business Class', multiplier: 1.5 },
+  ];
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 z-50">
       <div className="absolute right-0 top-0 h-full w-1/2 bg-white transform transition-transform duration-300 ease-in-out shadow-xl text-sm overflow-auto mb-10">
@@ -115,13 +119,11 @@ const FlightDetailsPanel = ({ isOpen, onClose, flight }) => {
                   <div className="font-medium">{formatTime(flight.departureTime)} - {flight.originCity}</div>
                   <div className="font-medium">{flight.originCode}</div>
                 </div>
-
                 <div className="space-y-1 mb-6">
                   <div>{duration} flight</div>
                   <div>Airbus 725</div> {/* Replace with flight.aircraft if available */}
                   <div>Economy</div>
                 </div>
-
                 <div>
                   <div className="font-medium">{formatTime(flight.arrivalTime)} - {flight.destinationCity}</div>
                   <div>{flight.destinationCode}</div>
@@ -132,8 +134,14 @@ const FlightDetailsPanel = ({ isOpen, onClose, flight }) => {
 
           {/* Pricing Options */}
           <div className="grid grid-cols-2 gap-4">
-            <PricingCard price={flight.price} type="Economy" />
-            <PricingCard price={flight.price * 1.5} type="Business Class" /> {/* Example multiplier */}
+            {cabinClasses.map((cabin) => (
+              <PricingCard
+                key={cabin.type}
+                price={flight.price * cabin.multiplier}
+                type={cabin.type}
+                currency={flight.currency}
+              />
+            ))}
           </div>
         </div>
       </div>
