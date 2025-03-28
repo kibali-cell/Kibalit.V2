@@ -9,7 +9,8 @@ const FlightList = ({ activeTab, flightsData, hotelsData }) => {
   const [showDetails, setShowDetails] = useState(false);
 
   const handleItemClick = (item) => {
-    setSelectedItem(item);
+    // Use the original flight data if available, otherwise use the mapped data
+    setSelectedItem(item.originalData || item);
     setShowDetails(true);
   };
 

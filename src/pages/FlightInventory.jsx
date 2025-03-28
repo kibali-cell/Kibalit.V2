@@ -31,7 +31,11 @@ const FlightInventory = ({
 
   useEffect(() => {
     if (initialResults) {
-      setSearchResults(initialResults);
+      // If initialResults is an array, wrap it in a data object
+      const normalizedData = Array.isArray(initialResults) 
+        ? { flights: initialResults }
+        : initialResults;
+      setSearchResults(normalizedData);
       setShowInventory(true);
     }
   }, [initialResults, setShowInventory]);
@@ -63,12 +67,14 @@ const FlightInventory = ({
         airline: firstSegment?.marketing_carrier?.name || 'Unknown Airline',
         logo: firstSegment?.marketing_carrier?.logo || '',
         price: apiFlight.total_amount || 0,
-        currency: apiFlight.total_currency || 'KES', // Add this line
-        hasPolicy: true, // Adjust if policy data is available
+        currency: apiFlight.total_currency || 'KES',
+        hasPolicy: apiFlight.offer_terms?.create_booking === "true",
         stops: firstSlice?.stops || 'N/A',
         cabinClass: passenger?.cabin_class_marketing_name || 'Economy',
         hasCheckedBaggage,
         hasCarryOnBaggage,
+        // Keep the original data for the details panel
+        originalData: apiFlight
       };
     } catch (error) {
       console.error('Error mapping flight:', error);
@@ -83,15 +89,18 @@ const FlightInventory = ({
     price: apiHotel.price?.value || 0,
     image: apiHotel.images?.main || 'default-hotel.jpg',
     rating: apiHotel.ratings?.overallRating || 0,
-    nights: 1, // Calculate based on dates if needed
-    guests: 1, // Default value
+    nights: 1,
+    guests: 1,
     amenities: apiHotel.amenities || [],
     checkIn: formData.hotel.checkIn || 'N/A',
     checkOut: formData.hotel.checkOut || 'N/A',
   });
 
-  const mappedFlights = (activeTab === 'Flights' && Array.isArray(searchResults.flights))
-    ? searchResults.flights.map(mapFlightData).filter(Boolean)
+  // Get the flights array from the search results
+  const flightsArray = Array.isArray(searchResults) ? searchResults : searchResults.flights || [];
+
+  const mappedFlights = (activeTab === 'Flights' && Array.isArray(flightsArray))
+    ? flightsArray.map(mapFlightData).filter(Boolean)
     : [];
 
   const mappedHotels = (activeTab === 'Hotels' && Array.isArray(searchResults.hotels))
@@ -157,7 +166,6 @@ const FlightInventory = ({
       if (filters.baggageOptions.includes('Cabin Baggage Included') && !flight.hasCarryOnBaggage) {
         return false;
       }
-      // Note: 'Extra Baggage Allowed' is not implemented due to lack of API data
 
       return true;
     });
