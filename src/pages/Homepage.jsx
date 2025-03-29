@@ -4,18 +4,18 @@ import SearchForm from "../components/homepage/SearchForm";
 import FlightInventory from "./FlightInventory";
 
 const HomePage = () => {
-  const [travelers, setTravelers] = useState(["John Doe", "Jane Susan"]);
+  const [travelers, setTravelers] = useState([]);
   const [tripType, setTripType] = useState("Return");
   const [activeTab, setActiveTab] = useState("Flights");
   const [showInventory, setShowInventory] = useState(false);
   const [searchResults, setSearchResults] = useState(null);
 
-  const handleAddTraveler = () => {
-    setTravelers([...travelers, "New Traveler"]);
+  const handleAddTraveler = (name) => {
+    setTravelers(prev => [...prev, name]);
   };
 
   const handleRemoveTraveler = (name) => {
-    setTravelers(travelers.filter((traveler) => traveler !== name));
+    setTravelers(prev => prev.filter(traveler => traveler !== name));
   };
 
   const tabs = [
@@ -47,12 +47,12 @@ const HomePage = () => {
                     : ""
                 }`}
               >
-                <span className="text-xs">{tab.icon}</span>
+                <span className="mr-1">{tab.icon}</span>
                 <span>{tab.name}</span>
               </button>
             ))}
           </div>
-          <div className="bg-white rounded-b-xl p-4 flex flex-col flex-grow overflow-y-auto">
+          <div className="bg-white p-6 rounded-b-lg rounded-tr-lg">
             <SearchForm
               activeTab={activeTab}
               travelers={travelers}
@@ -61,17 +61,13 @@ const HomePage = () => {
               tripType={tripType}
               setTripType={setTripType}
               setShowInventory={setShowInventory}
-              onResultsFetched={(data) => {
-                setSearchResults(data);
-                setShowInventory(true);
-              }}
-              onClose={() => {}}
+              onResultsFetched={setSearchResults}
             />
           </div>
         </div>
       </div>
 
-      {/* Inventory Section */}
+      {/* Flight Inventory */}
       {showInventory && (
         <FlightInventory
           isVisible={showInventory}
