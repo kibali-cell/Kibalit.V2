@@ -1,122 +1,320 @@
-import React, { useState } from 'react';
-import { IoClose } from 'react-icons/io5';
-import { TbUser } from 'react-icons/tb';
-import seats from "../../../assets/seats.png"
-import { FaRegArrowAltCircleLeft } from "react-icons/fa";
+import React, { useState, useEffect } from 'react';
+import { FaRegArrowAltCircleLeft } from 'react-icons/fa';
+import { IoAirplaneOutline } from 'react-icons/io5';
+import { FaUser } from 'react-icons/fa';
+import axios from 'axios';
+import FlightExtrasPanel from './FlightExtrasPanel';
 
-const SeatSelectionPanel = ({ isOpen, onClose }) => {
-  const [selectedDirection, setSelectedDirection] = useState('DAR-NBO');
-  const [selectedSeats, setSelectedSeats] = useState({
-    'John Manyo': 'BE',
-    'Jane Manyo': '--'
-  });
+const SeatSelectionPanel = ({ isOpen, onClose, flight, onSelectionComplete }) => {
+  const [selectedSeat, setSelectedSeat] = useState(null);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [seats, setSeats] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isReturn, setIsReturn] = useState(false);
+  const [employees, setEmployees] = useState([]);
+  const [loadingEmployees, setLoadingEmployees] = useState(true);
+  const [isExtrasOpen, setIsExtrasOpen] = useState(false);
+  const [selectedExtras, setSelectedExtras] = useState({});
+  const [totalPrice, setTotalPrice] = useState(flight?.total_amount || 0);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (isOpen) {
+      generateSeats();
+      fetchEmployees();
+    }
+  }, [isOpen, isReturn]);
 
-  const passengers = [
-    { name: 'John Manyo', seat: selectedSeats['John Manyo'] },
-    { name: 'Jane Manyo', seat: selectedSeats['Jane Manyo'] }
-  ];
+  useEffect(() => {
+    // Update total price whenever seat or extras change
+    const seatPrice = selectedSeat ? seats.find(s => s.id === selectedSeat)?.price || 0 : 0;
+    const extrasTotal = Object.values(selectedExtras).reduce((sum, extra) => sum + (extra.price || 0), 0);
+    setTotalPrice(flight.total_amount + seatPrice + extrasTotal);
+  }, [selectedSeat, selectedExtras, flight.total_amount, seats]);
 
+  const fetchEmployees = async () => {
+    try {
+      setLoadingEmployees(true);
+      const response = await axios.get('/api/users');
+      // Ensure we're working with an array and it has the required fields
+      const employeeData = response.data?.data || response.data || [];
+      const formattedEmployees = Array.isArray(employeeData) ? employeeData : [];
+      
+      // Map the response to ensure we have the required fields
+      const processedEmployees = formattedEmployees.map(emp => ({
+        id: emp.id,
+        name: emp.name || emp.full_name || 'Unknown',
+        department: emp.department || emp.department_name || 'No Department'
+      }));
+      
+      setEmployees(processedEmployees);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      setEmployees([]); // Set empty array on error
+    } finally {
+      setLoadingEmployees(false);
+    }
+  };
+
+  const generateSeats = () => {
+    const cabinClass = flight?.slices?.[isReturn ? 1 : 0]?.segments?.[0]?.passengers?.[0]?.cabin_class_marketing_name || 'Economy';
+    const rows = cabinClass === 'Economy' ? 20 : 8;
+    const seatsPerRow = cabinClass === 'Economy' ? 6 : 4;
+    
+    const newSeats = [];
+    for (let row = 1; row <= rows; row++) {
+      for (let seat = 1; seat <= seatsPerRow; seat++) {
+        const seatLetter = String.fromCharCode(64 + seat);
+        const seatNumber = `${row}${seatLetter}`;
+        
+        const isAvailable = Math.random() > 0.3;
+        
+        let seatType = 'standard';
+        if (cabinClass === 'Economy') {
+          if (seat === 1 || seat === seatsPerRow) seatType = 'window';
+          else if (seat === 2 || seat === seatsPerRow - 1) seatType = 'middle';
+          else seatType = 'aisle';
+        } else {
+          if (seat === 1 || seat === seatsPerRow) seatType = 'window';
+          else seatType = 'aisle';
+        }
+
+        newSeats.push({
+          id: seatNumber,
+          number: seatNumber,
+          row,
+          seat: seatLetter,
+          type: seatType,
+          available: isAvailable,
+          price: calculateSeatPrice(seatType, cabinClass)
+        });
+      }
+    }
+    
+    setSeats(newSeats);
+    setLoading(false);
+  };
+
+  const calculateSeatPrice = (seatType, cabinClass) => {
+    const basePrice = cabinClass === 'Economy' ? 15000 : 25000;
+    const typeMultiplier = {
+      window: 1.2,
+      aisle: 1.1,
+      middle: 1.0,
+      standard: 1.0
+    };
+    return Math.round(basePrice * typeMultiplier[seatType]);
+  };
+
+  const handleSeatClick = (seat) => {
+    if (seat.available) {
+      setSelectedSeat(selectedSeat === seat.id ? null : seat.id);
+    }
+  };
+
+  const handleConfirmSelection = () => {
+    if (selectedSeat && selectedEmployee) {
+      const seat = seats.find(s => s.id === selectedSeat);
+      setIsExtrasOpen(true);
+    }
+  };
+
+  const handleExtrasClose = (extras) => {
+    setIsExtrasOpen(false);
+    if (extras) {
+      setSelectedExtras(extras);
+      
+      // Prepare final selection data
+      const selectedData = {
+        flight,
+        seat: seats.find(s => s.id === selectedSeat),
+        employee: employees.find(e => e.id === selectedEmployee),
+        extras,
+        totalPrice,
+        isReturn
+      };
+      
+      // Pass the complete selection data to parent
+      if (onSelectionComplete) {
+        onSelectionComplete(selectedData);
+      }
+      onClose();
+    }
+  };
+
+  if (!isOpen || !flight) return null;
+
+  const currentSlice = flight.slices?.[isReturn ? 1 : 0];
+  const cabinClass = currentSlice?.segments?.[0]?.passengers?.[0]?.cabin_class_marketing_name || 'Economy';
+  const airline = currentSlice?.segments?.[0]?.marketing_carrier?.name || 'Airline';
+  const flightNumber = currentSlice?.segments?.[0]?.marketing_carrier_flight_number || '';
+  const origin = currentSlice?.segments?.[0]?.origin?.iata_code || '';
+  const destination = currentSlice?.segments?.[0]?.destination?.iata_code || '';
 
   return (
-    <div className="fixed inset-0 bg-black/30 z-50">
-      <div className="absolute right-0 top-0 h-full w-1/2 bg-white shadow-xl animate-slide-in-right overflow-auto">
-        <div className="h-full flex flex-col">
+    <>
+      <div className="fixed inset-0 bg-[#1C1C1C] bg-opacity-30 z-50">
+        <div className="absolute right-0 top-0 h-full w-1/2 bg-white transform transition-transform duration-300 ease-in-out shadow-xl">
+          <div className="p-6 h-full flex flex-col">
           {/* Header */}
-          <div className="px-6 py-4 mb-3">
-            <div className="flex  items-center">
-              <button onClick={onClose} className="p-2 hover:bg-sectionBg rounded-full">
-                <FaRegArrowAltCircleLeft className="w-6 h-6" />
+            <div className="flex items-center mb-6">
+              <button onClick={() => onClose()} className="p-2 hover:bg-[#F5F5F5] rounded-full">
+                <FaRegArrowAltCircleLeft className="text-xl text-[#1C1C1C]" />
               </button>
-              <h2 className="text-heading-3 text-primaryText">Choose Flight Seat</h2>
+              <div className="ml-4">
+                <h2 className="text-xl font-semibold text-[#1C1C1C]">Select Seat & Passenger</h2>
+                <p className="text-sm text-[#737373]">{airline} - Flight {flightNumber}</p>
+              </div>
             </div>
+
             {/* Flight Direction Toggle */}
-            <div className="flex gap-2 pl-10">
+            {flight.slices?.length > 1 && (
+              <div className="flex gap-2 mb-4">
               <button
-                className={`px-4 py-2 rounded-sm text-label-2-medium ${selectedDirection === 'DAR-NBO'
-                  ? 'bg-buttonPrimary text-white'
-                  : 'bg-sectionBg text-buttonText'
+                  className={`px-4 py-2 rounded-md ${
+                    !isReturn
+                      ? 'bg-[#1C1C1C] text-white'
+                      : 'bg-[#F5F5F5] text-[#374151]'
                   }`}
-                onClick={() => setSelectedDirection('DAR-NBO')}
-              >
-                🛫 DAR - NBO
+                  onClick={() => setIsReturn(false)}
+                >
+                  {origin} → {destination}
               </button>
               <button
-                className={`px-4 py-2 rounded-sm text-label-2-medium ${selectedDirection === 'NBO-DAR'
-                  ? 'bg-buttonPrimary text-white'
-                  : 'bg-sectionBg text-buttonText'
+                  className={`px-4 py-2 rounded-md ${
+                    isReturn
+                      ? 'bg-[#1C1C1C] text-white'
+                      : 'bg-[#F5F5F5] text-[#374151]'
                   }`}
-                onClick={() => setSelectedDirection('NBO-DAR')}
-              >
-                🛫 NBO - DAR
+                  onClick={() => setIsReturn(true)}
+                >
+                  {destination} → {origin}
               </button>
             </div>
+            )}
 
+            {/* Employee Selection */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-[#1C1C1C] mb-2">Select Passenger</h3>
+              {loadingEmployees ? (
+                <div className="text-center py-4 text-[#737373]">Loading employees...</div>
+              ) : employees.length > 0 ? (
+                <div className="grid grid-cols-2 gap-2">
+                  {employees.map((employee) => (
+                    <button
+                      key={employee.id}
+                      onClick={() => setSelectedEmployee(employee.id)}
+                      className={`
+                        flex items-center gap-2 p-3 rounded-md border-2
+                        ${selectedEmployee === employee.id 
+                          ? 'border-[#1C1C1C] bg-[#F5F5F5]' 
+                          : 'border-[#EBEBEB] hover:border-[#1C1C1C]'
+                        }
+                      `}
+                    >
+                      <FaUser className="text-[#1C1C1C]" />
+                      <div className="text-left">
+                        <div className="text-sm font-medium">{employee.name}</div>
+                        <div className="text-xs text-[#737373]">{employee.department}</div>
           </div>
-
-          <div className="flex pl-12 pr-5 ">
-
-            <div className='flex flex-col'>
-              {/* Flight Info */}
-              <div>
-                <div className="text-label-2-medium text-secondaryText mb-1">Flight #1</div>
-                <div className="text-label-1-medium text-primaryText">
-                  Dar es salaam (DAR) - Nairobi (NBO)
+                    </button>
+                  ))}
                 </div>
+              ) : (
+                <div className="text-center py-4 text-[#737373]">No employees found</div>
+              )}
               </div>
 
-              {/* Passenger List */}
-              <div className="">
-                {passengers.map(passenger => (
-                  <div key={passenger.name} className="flex justify-between items-center py-3 border-b border-stroke-lightGreyBg">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-sectionBg rounded-full">
-                        <TbUser className="w-4 h-4 text-secondaryText" />
-                      </div>
-                      <span className="text-label-1-medium text-primaryText">{passenger.name}</span>
-                    </div>
-                    <div className="text-label-2-medium text-secondaryText">
-                      Seat: <span className="text-label-2-medium text-primaryText">{passenger.seat}</span>
-                    </div>
+            {/* Seat Map */}
+            <div className="flex-1 overflow-auto">
+              <div className="max-w-2xl mx-auto">
+                {/* Airplane Graphic */}
+                <div className="relative mb-4">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <IoAirplaneOutline className="text-3xl text-[#E6E6E6] transform rotate-90" />
                   </div>
-                ))}
+                  <div className="h-1 bg-[#E6E6E6]"></div>
+                      </div>
+
+                {/* Seat Legend */}
+                <div className="grid grid-cols-4 gap-2 mb-4">
+                  <div className="flex items-center gap-1">
+                    <div className="w-4 h-4 border-2 border-[#EBEBEB] rounded"></div>
+                    <span className="text-xs text-[#737373]">Available</span>
+                    </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-4 h-4 bg-[#1C1C1C] rounded"></div>
+                    <span className="text-xs text-[#737373]">Selected</span>
+                    </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-4 h-4 bg-[#E6E6E6] rounded"></div>
+                    <span className="text-xs text-[#737373]">Unavailable</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-4 h-4 border-2 border-[#1C1C1C] rounded"></div>
+                    <span className="text-xs text-[#737373]">Window</span>
               </div>
             </div>
 
             {/* Seat Grid */}
-            <div className="ml-10 ">
-              {/* Column Headers */}
-              <div className='w-auto'>
-                <img src={seats} className='' />
+                <div className="space-y-2">
+                  {loading ? (
+                    <div className="text-center py-4 text-[#737373]">Loading seats...</div>
+                  ) : (
+                    <div className="grid grid-cols-6 gap-1">
+                      {seats.map((seat) => (
+                        <button
+                          key={seat.id}
+                          onClick={() => handleSeatClick(seat)}
+                          className={`
+                            w-8 h-8 rounded flex items-center justify-center text-xs font-medium
+                            ${!seat.available ? 'bg-[#E6E6E6] cursor-not-allowed' : ''}
+                            ${selectedSeat === seat.id ? 'bg-[#1C1C1C] text-white' : 'border-2 border-[#EBEBEB]'}
+                            ${seat.type === 'window' ? 'border-[#1C1C1C]' : ''}
+                            hover:${seat.available ? 'border-[#1C1C1C]' : ''}
+                          `}
+                          disabled={!seat.available}
+                        >
+                          {seat.seat}
+                        </button>
+                      ))}
               </div>
-
-              {/* Legend */}
-              <div className="mt-6 flex gap-6">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-buttonPrimary rounded-sm"></div>
-                  <span className="text-label-2-medium text-secondaryText">Available</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-stroke-lightGreyBg rounded-sm"></div>
-                  <span className="text-label-2-medium text-secondaryText">Not Available</span>
-                </div>
+                  )}
               </div>
             </div>
           </div>
 
           {/* Footer */}
-        <div className="px-6 py-4 border-t border-stroke-lightGreyBg mt-3">
+            <div className="mt-4 pt-4 border-t border-[#EBEBEB]">
           <div className="flex justify-between items-center">
             <div>
-              <div className="text-label-2-medium text-secondaryText">Additional Price</div>
-              <div className="text-heading-3 text-primaryText">Tsh 75,000</div>
+                  <div className="text-sm text-[#737373]">Total Price</div>
+                  <div className="text-xl font-semibold text-[#1C1C1C]">
+                    {flight.total_currency} {totalPrice.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-[#737373] mt-1">
+                    Base price: {flight.total_currency} {flight.total_amount.toLocaleString()}
+                  </div>
+                  {selectedSeat && (
+                    <div className="text-sm text-[#737373]">
+                      Seat selection: + {flight.total_currency} {seats.find(s => s.id === selectedSeat)?.price.toLocaleString()}
+                    </div>
+                  )}
+                  {Object.keys(selectedExtras).length > 0 && (
+                    <div className="text-sm text-[#737373]">
+                      Extras: + {flight.total_currency} {Object.values(selectedExtras).reduce((sum, extra) => sum + (extra.price || 0), 0).toLocaleString()}
+                    </div>
+                  )}
             </div>
             <button
-              className="px-6 py-2 bg-buttonPrimary text-white rounded-md hover:bg-opacity-90 text-label-1-medium"
-              onClick={onClose}
-            >
-              Confirm Seat Selection
+                  className={`px-6 py-2 rounded-md ${
+                    selectedSeat && selectedEmployee
+                      ? 'bg-[#1C1C1C] text-white hover:bg-opacity-90'
+                      : 'bg-[#F5F5F5] text-[#737373] cursor-not-allowed'
+                  }`}
+                  disabled={!selectedSeat || !selectedEmployee}
+                  onClick={handleConfirmSelection}
+                >
+                  Continue to Extras
             </button>
           </div>
         </div>
@@ -124,6 +322,14 @@ const SeatSelectionPanel = ({ isOpen, onClose }) => {
       </div>
     </div>
 
+      <FlightExtrasPanel
+        isOpen={isExtrasOpen}
+        onClose={handleExtrasClose}
+        flight={flight}
+        basePrice={totalPrice}
+        currentExtras={selectedExtras}
+      />
+    </>
   );
 };
 

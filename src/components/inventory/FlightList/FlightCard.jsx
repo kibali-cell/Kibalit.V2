@@ -23,10 +23,10 @@ const FlightCard = ({ flight, onClick }) => {
   };
 
   // Check if this is a return trip (more than one slice)
-  const isReturnTrip = flight.slices && flight.slices.length > 1;
+  const isReturnTrip = flight.originalData?.slices?.length > 1;
 
-  // Assume flight.logo is provided by the API or mapped data; fallback to a default if not available
-  const airlineLogo = flight.logo || 'https://via.placeholder.com/20'; // Default placeholder logo
+  // Get airline logo from the mapped data
+  const airlineLogo = flight.logo || 'https://via.placeholder.com/20';
 
   return (
     <div

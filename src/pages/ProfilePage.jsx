@@ -3,7 +3,7 @@ import { FaArrowRight, FaEdit } from 'react-icons/fa';
 import { IoClose } from 'react-icons/io5';
 import { useNavigate } from 'react-router-dom';
 import LanguageAndRegionModal from '../components/profilepage/LanguageModal';
-import NotifictionsModal from '../components/profilepage/NotificationsModal';
+import NotificationsModal from '../components/profilepage/NotificationsModal';
 import PersonalDetailsModal from '../components/profilepage/PersonalDetailsModal';
 import TravelPolicyModal from '../components/profilepage/TravelPolicyModal';
 import EmergencyContactModal from '../components/profilepage/EmergencyContactModal';
@@ -26,17 +26,22 @@ const ProfilePage = ({ isOpen, onClose }) => {
     const fetchUserProfile = async () => {
       try {
         const userResponse = await api.get('/user');
-        // Now userResponse.data should be: { user: { ...userData, roles: [...], company: { ... } } }
+        console.log('User Data:', userResponse.data.user);
+        console.log('User Roles:', userResponse.data.user.roles);
         setUserProfile(userResponse.data.user);
       } catch (error) {
         console.error('Failed to fetch data:', error);
         if (error.response?.status === 401) navigate('/login');
       }
     };
-  
+
     fetchUserProfile();
   }, [navigate]);
-  
+
+  // Callback to update userProfile after a successful update
+  const handleProfileUpdate = (updatedUser) => {
+    setUserProfile(updatedUser);
+  };
 
   // Modal handlers
   const openDetailsModal = () => setIsPersonalModalOpen(true);
@@ -90,7 +95,10 @@ const ProfilePage = ({ isOpen, onClose }) => {
                     Company: {userProfile.company?.name || 'Loading company...'}
                   </p>
                   <p className="text-sm text-gray-500">
-                    Department: {userProfile.company?.department || 'N/A'}
+                    Department: {userProfile.department || 'N/A'}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Role: {userProfile.roles?.map(role => role.name).join(', ') || 'N/A'}
                   </p>
                 </div>
               </div>
@@ -165,10 +173,13 @@ const ProfilePage = ({ isOpen, onClose }) => {
               <PersonalDetailsModal 
                 onClose={closeDetailsModal} 
                 initialData={userProfile} 
+                onUpdate={handleProfileUpdate}
               />
             )}
             {showModal && <LanguageAndRegionModal onClose={() => setShowModal(false)} />}
             {isContactModalOpen && <EmergencyContactModal onClose={closeContactModal} />}
+            {isNotificationModalOpen && <NotificationsModal onClose={closeNotificationModal} />}
+            {isPolicyModalOpen && <TravelPolicyModal onClose={closePolicyModal} />}
           </div>
         </div>
       </div>
