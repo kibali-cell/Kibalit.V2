@@ -70,15 +70,15 @@ const TravelerModal = ({ isOpen, onClose, onSelect, selectedTravelers }) => {
       try {
         const response = await api.get('/users', {
           params: {
-            roles: ['super_admin', 'travel_admin', 'employee'], // Updated to match RoleSeeder slugs
+            roles: ['super_admin', 'travel_admin', 'employee'], 
           },
         });
 
-        // Transform the users data from response.data.users
+       
         const transformedUsers = response.data.users.map((user) => ({
           id: user.id,
           name: user.name,
-          department: user.roles[0]?.name || 'Employee', // Using the role name from the backend
+          department: user.roles[0]?.name || 'Employee', 
           email: user.email,
         }));
 
@@ -234,7 +234,7 @@ const SearchForm = ({
         }
 
         const responseData = await response.json();
-        onResultsFetched({ flights: responseData.data?.data || responseData.data || [] });
+        onResultsFetched({ flights: responseData.data?.data || responseData.data || [], travelers: travelers });
         setShowInventory(true);
       } catch (error) {
         console.error('Flight search error:', error);

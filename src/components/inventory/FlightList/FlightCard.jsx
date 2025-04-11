@@ -1,6 +1,6 @@
 import { IoIosAirplane } from 'react-icons/io';
 
-const FlightCard = ({ flight, onClick }) => {
+const FlightCard = ({ flight, onClick, travelers }) => {
   // Helper function to format ISO date strings to readable time (e.g., "10:00")
   const formatTime = (isoString) => {
     if (!isoString) return 'N/A';

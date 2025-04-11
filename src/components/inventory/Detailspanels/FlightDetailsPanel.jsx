@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { IoCloseCircleOutline } from 'react-icons/io5';
 import FlightExtrasPanel from './FlightExtrasPanel';
 
-const FlightDetailsPanel = ({ isOpen, onClose, flight }) => {
+const FlightDetailsPanel = ({ isOpen, onClose, flight, travelers = [] }) => {
   const [isExtrasOpen, setIsExtrasOpen] = useState(false);
 
   // Log flight prop for debugging
@@ -135,6 +135,7 @@ const FlightDetailsPanel = ({ isOpen, onClose, flight }) => {
         onClose={() => setIsExtrasOpen(false)}
         flight={flight}
         basePrice={flight.total_amount}
+        travelers={travelers}
       />
     </div>
   );

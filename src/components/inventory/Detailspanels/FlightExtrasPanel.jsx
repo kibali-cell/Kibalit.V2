@@ -5,7 +5,7 @@ import { BsChevronRight } from "react-icons/bs";
 import SeatSelectionPanel from "./SeatSelectionPanel";
 import AddMoreFlights from "./AddMoreFlights";
 
-const FlightExtrasPanel = ({ isOpen, onClose, basePrice = 0, flight }) => {
+const FlightExtrasPanel = ({ isOpen, onClose, basePrice = 0, flight, travelers = [] }) => {
   const [selectedBaggage, setSelectedBaggage] = useState([]);
   const [isSeatSelectOpen, setIsSeatSelectOpen] = useState(false);
   const [isMoreFlightsOpen, setIsMoreFlightOpen] = useState(false);
@@ -220,6 +220,7 @@ const FlightExtrasPanel = ({ isOpen, onClose, basePrice = 0, flight }) => {
         isOpen={isSeatSelectOpen}
         onClose={() => setIsSeatSelectOpen(false)}
         flight={flight}
+        travelers={travelers}
       />
       <AddMoreFlights
         isOpen={isMoreFlightsOpen}

@@ -2,17 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { FaRegArrowAltCircleLeft } from 'react-icons/fa';
 import { IoAirplaneOutline } from 'react-icons/io5';
 import { FaUser } from 'react-icons/fa';
-import axios from 'axios';
 import FlightExtrasPanel from './FlightExtrasPanel';
 
-const SeatSelectionPanel = ({ isOpen, onClose, flight, onSelectionComplete }) => {
+const SeatSelectionPanel = ({ isOpen, onClose, flight, onSelectionComplete, travelers = [] }) => {
   const [selectedSeat, setSelectedSeat] = useState(null);
-  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [selectedTraveler, setSelectedTraveler] = useState(null);
   const [seats, setSeats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isReturn, setIsReturn] = useState(false);
-  const [employees, setEmployees] = useState([]);
-  const [loadingEmployees, setLoadingEmployees] = useState(true);
   const [isExtrasOpen, setIsExtrasOpen] = useState(false);
   const [selectedExtras, setSelectedExtras] = useState({});
   const [totalPrice, setTotalPrice] = useState(flight?.total_amount || 0);
@@ -20,7 +17,6 @@ const SeatSelectionPanel = ({ isOpen, onClose, flight, onSelectionComplete }) =>
   useEffect(() => {
     if (isOpen) {
       generateSeats();
-      fetchEmployees();
     }
   }, [isOpen, isReturn]);
 
@@ -30,30 +26,6 @@ const SeatSelectionPanel = ({ isOpen, onClose, flight, onSelectionComplete }) =>
     const extrasTotal = Object.values(selectedExtras).reduce((sum, extra) => sum + (extra.price || 0), 0);
     setTotalPrice(flight.total_amount + seatPrice + extrasTotal);
   }, [selectedSeat, selectedExtras, flight.total_amount, seats]);
-
-  const fetchEmployees = async () => {
-    try {
-      setLoadingEmployees(true);
-      const response = await axios.get('/api/users');
-      // Ensure we're working with an array and it has the required fields
-      const employeeData = response.data?.data || response.data || [];
-      const formattedEmployees = Array.isArray(employeeData) ? employeeData : [];
-      
-      // Map the response to ensure we have the required fields
-      const processedEmployees = formattedEmployees.map(emp => ({
-        id: emp.id,
-        name: emp.name || emp.full_name || 'Unknown',
-        department: emp.department || emp.department_name || 'No Department'
-      }));
-      
-      setEmployees(processedEmployees);
-    } catch (error) {
-      console.error('Error fetching employees:', error);
-      setEmployees([]); // Set empty array on error
-    } finally {
-      setLoadingEmployees(false);
-    }
-  };
 
   const generateSeats = () => {
     const cabinClass = flight?.slices?.[isReturn ? 1 : 0]?.segments?.[0]?.passengers?.[0]?.cabin_class_marketing_name || 'Economy';
@@ -112,8 +84,7 @@ const SeatSelectionPanel = ({ isOpen, onClose, flight, onSelectionComplete }) =>
   };
 
   const handleConfirmSelection = () => {
-    if (selectedSeat && selectedEmployee) {
-      const seat = seats.find(s => s.id === selectedSeat);
+    if (selectedSeat && selectedTraveler) {
       setIsExtrasOpen(true);
     }
   };
@@ -127,7 +98,7 @@ const SeatSelectionPanel = ({ isOpen, onClose, flight, onSelectionComplete }) =>
       const selectedData = {
         flight,
         seat: seats.find(s => s.id === selectedSeat),
-        employee: employees.find(e => e.id === selectedEmployee),
+        traveler: travelers.find(t => t.id === selectedTraveler),
         extras,
         totalPrice,
         isReturn
@@ -192,20 +163,18 @@ const SeatSelectionPanel = ({ isOpen, onClose, flight, onSelectionComplete }) =>
             </div>
             )}
 
-            {/* Employee Selection */}
+            {/* Traveler Selection */}
             <div className="mb-6">
               <h3 className="text-sm font-medium text-[#1C1C1C] mb-2">Select Passenger</h3>
-              {loadingEmployees ? (
-                <div className="text-center py-4 text-[#737373]">Loading employees...</div>
-              ) : employees.length > 0 ? (
+              {travelers.length > 0 ? (
                 <div className="grid grid-cols-2 gap-2">
-                  {employees.map((employee) => (
+                  {travelers.map((traveler) => (
                     <button
-                      key={employee.id}
-                      onClick={() => setSelectedEmployee(employee.id)}
+                      key={traveler.id}
+                      onClick={() => setSelectedTraveler(traveler.id)}
                       className={`
                         flex items-center gap-2 p-3 rounded-md border-2
-                        ${selectedEmployee === employee.id 
+                        ${selectedTraveler === traveler.id 
                           ? 'border-[#1C1C1C] bg-[#F5F5F5]' 
                           : 'border-[#EBEBEB] hover:border-[#1C1C1C]'
                         }
@@ -213,16 +182,16 @@ const SeatSelectionPanel = ({ isOpen, onClose, flight, onSelectionComplete }) =>
                     >
                       <FaUser className="text-[#1C1C1C]" />
                       <div className="text-left">
-                        <div className="text-sm font-medium">{employee.name}</div>
-                        <div className="text-xs text-[#737373]">{employee.department}</div>
-          </div>
+                        <div className="text-sm font-medium">{traveler.name}</div>
+                        <div className="text-xs text-[#737373]">{traveler.department}</div>
+                      </div>
                     </button>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-4 text-[#737373]">No employees found</div>
+                <div className="text-center py-4 text-[#737373]">No travelers selected</div>
               )}
-              </div>
+            </div>
 
             {/* Seat Map */}
             <div className="flex-1 overflow-auto">
@@ -233,18 +202,18 @@ const SeatSelectionPanel = ({ isOpen, onClose, flight, onSelectionComplete }) =>
                     <IoAirplaneOutline className="text-3xl text-[#E6E6E6] transform rotate-90" />
                   </div>
                   <div className="h-1 bg-[#E6E6E6]"></div>
-                      </div>
+                </div>
 
                 {/* Seat Legend */}
                 <div className="grid grid-cols-4 gap-2 mb-4">
                   <div className="flex items-center gap-1">
                     <div className="w-4 h-4 border-2 border-[#EBEBEB] rounded"></div>
                     <span className="text-xs text-[#737373]">Available</span>
-                    </div>
+                  </div>
                   <div className="flex items-center gap-1">
                     <div className="w-4 h-4 bg-[#1C1C1C] rounded"></div>
                     <span className="text-xs text-[#737373]">Selected</span>
-                    </div>
+                  </div>
                   <div className="flex items-center gap-1">
                     <div className="w-4 h-4 bg-[#E6E6E6] rounded"></div>
                     <span className="text-xs text-[#737373]">Unavailable</span>
@@ -252,10 +221,10 @@ const SeatSelectionPanel = ({ isOpen, onClose, flight, onSelectionComplete }) =>
                   <div className="flex items-center gap-1">
                     <div className="w-4 h-4 border-2 border-[#1C1C1C] rounded"></div>
                     <span className="text-xs text-[#737373]">Window</span>
-              </div>
-            </div>
+                  </div>
+                </div>
 
-            {/* Seat Grid */}
+                {/* Seat Grid */}
                 <div className="space-y-2">
                   {loading ? (
                     <div className="text-center py-4 text-[#737373]">Loading seats...</div>
@@ -277,50 +246,50 @@ const SeatSelectionPanel = ({ isOpen, onClose, flight, onSelectionComplete }) =>
                           {seat.seat}
                         </button>
                       ))}
-              </div>
+                    </div>
                   )}
+                </div>
               </div>
             </div>
           </div>
 
           {/* Footer */}
-            <div className="mt-4 pt-4 border-t border-[#EBEBEB]">
-          <div className="flex justify-between items-center">
-            <div>
-                  <div className="text-sm text-[#737373]">Total Price</div>
-                  <div className="text-xl font-semibold text-[#1C1C1C]">
-                    {flight.total_currency} {totalPrice.toLocaleString()}
+          <div className="mt-4 pt-4 border-t border-[#EBEBEB]">
+            <div className="flex justify-between items-center">
+              <div>
+                <div className="text-sm text-[#737373]">Total Price</div>
+                <div className="text-xl font-semibold text-[#1C1C1C]">
+                  {flight.total_currency} {totalPrice.toLocaleString()}
+                </div>
+                <div className="text-sm text-[#737373] mt-1">
+                  Base price: {flight.total_currency} {flight.total_amount.toLocaleString()}
+                </div>
+                {selectedSeat && (
+                  <div className="text-sm text-[#737373]">
+                    Seat selection: + {flight.total_currency} {seats.find(s => s.id === selectedSeat)?.price.toLocaleString()}
                   </div>
-                  <div className="text-sm text-[#737373] mt-1">
-                    Base price: {flight.total_currency} {flight.total_amount.toLocaleString()}
+                )}
+                {Object.keys(selectedExtras).length > 0 && (
+                  <div className="text-sm text-[#737373]">
+                    Extras: + {flight.total_currency} {Object.values(selectedExtras).reduce((sum, extra) => sum + (extra.price || 0), 0).toLocaleString()}
                   </div>
-                  {selectedSeat && (
-                    <div className="text-sm text-[#737373]">
-                      Seat selection: + {flight.total_currency} {seats.find(s => s.id === selectedSeat)?.price.toLocaleString()}
-                    </div>
-                  )}
-                  {Object.keys(selectedExtras).length > 0 && (
-                    <div className="text-sm text-[#737373]">
-                      Extras: + {flight.total_currency} {Object.values(selectedExtras).reduce((sum, extra) => sum + (extra.price || 0), 0).toLocaleString()}
-                    </div>
-                  )}
+                )}
+              </div>
+              <button
+                className={`px-6 py-2 rounded-md ${
+                  selectedSeat && selectedTraveler
+                    ? 'bg-[#1C1C1C] text-white hover:bg-opacity-90'
+                    : 'bg-[#F5F5F5] text-[#737373] cursor-not-allowed'
+                }`}
+                disabled={!selectedSeat || !selectedTraveler}
+                onClick={handleConfirmSelection}
+              >
+                Continue to Extras
+              </button>
             </div>
-            <button
-                  className={`px-6 py-2 rounded-md ${
-                    selectedSeat && selectedEmployee
-                      ? 'bg-[#1C1C1C] text-white hover:bg-opacity-90'
-                      : 'bg-[#F5F5F5] text-[#737373] cursor-not-allowed'
-                  }`}
-                  disabled={!selectedSeat || !selectedEmployee}
-                  onClick={handleConfirmSelection}
-                >
-                  Continue to Extras
-            </button>
           </div>
         </div>
-        </div>
       </div>
-    </div>
 
       <FlightExtrasPanel
         isOpen={isExtrasOpen}

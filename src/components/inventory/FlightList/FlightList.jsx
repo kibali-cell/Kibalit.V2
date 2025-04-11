@@ -4,7 +4,7 @@ import HotelDetailsPanel from '../Detailspanels/HotelDetailsPanel';
 import FlightCard from './FlightCard';
 import HotelCard from './HotelCard';
 
-const FlightList = ({ activeTab, flightsData, hotelsData }) => {
+const FlightList = ({ activeTab, flightsData, hotelsData, travelers }) => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
 
@@ -29,6 +29,7 @@ const FlightList = ({ activeTab, flightsData, hotelsData }) => {
                 key={flight.id} 
                 flight={flight} 
                 onClick={() => handleItemClick(flight)} 
+                travelers={travelers}
               />
             ))}
           </div>
@@ -68,6 +69,7 @@ const FlightList = ({ activeTab, flightsData, hotelsData }) => {
           isOpen={showDetails}
           onClose={handleClosePanel}
           flight={selectedItem}
+          travelers={travelers}
         />
       )}
       

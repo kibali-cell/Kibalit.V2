@@ -13,6 +13,8 @@ const FlightInventory = ({
   initialResults,
 }) => {
   const [searchResults, setSearchResults] = useState(initialResults || {});
+  const [travelers, setTravelers] = useState(initialResults?.travelers || []);
+
   const [formData, setFormData] = useState({
     flight: { from: '', to: '', departDate: '', returnDate: '' },
     hotel: { location: '', checkIn: '', checkOut: '', travelers: '' },
@@ -31,11 +33,11 @@ const FlightInventory = ({
 
   useEffect(() => {
     if (initialResults) {
-      // If initialResults is an array, wrap it in a data object
       const normalizedData = Array.isArray(initialResults) 
         ? { flights: initialResults }
         : initialResults;
       setSearchResults(normalizedData);
+      setTravelers(normalizedData.travelers || []);
       setShowInventory(true);
     }
   }, [initialResults, setShowInventory]);
@@ -185,8 +187,10 @@ const FlightInventory = ({
           const normalizedData = {
             flights: data.data?.data || data.flights || [],
             hotels: data.hotel_list?.data || data.hotels || [],
+            travelers: data.travelers || [],
           };
           setSearchResults(normalizedData);
+          setTravelers(data.travelers || []); 
         }}
         setShowInventory={setShowInventory}
         setFormData={setFormData}
@@ -204,6 +208,7 @@ const FlightInventory = ({
             activeTab={activeTab}
             flightsData={filteredFlights}
             hotelsData={mappedHotels}
+            travelers={travelers}
           />
         </div>
       </div>
