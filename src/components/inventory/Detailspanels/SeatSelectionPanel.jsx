@@ -5,27 +5,68 @@ import { FaUser } from 'react-icons/fa';
 import FlightExtrasPanel from './FlightExtrasPanel';
 
 const SeatSelectionPanel = ({ isOpen, onClose, flight, onSelectionComplete, travelers = [] }) => {
-  const [selectedSeat, setSelectedSeat] = useState(null);
-  const [selectedTraveler, setSelectedTraveler] = useState(null);
+  const [travelerSeats, setTravelerSeats] = useState({});
+  const [activeTraveler, setActiveTraveler] = useState(null);
   const [seats, setSeats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isReturn, setIsReturn] = useState(false);
   const [isExtrasOpen, setIsExtrasOpen] = useState(false);
   const [selectedExtras, setSelectedExtras] = useState({});
   const [totalPrice, setTotalPrice] = useState(flight?.total_amount || 0);
+  const [priceBreakdown, setPriceBreakdown] = useState({
+    baseFlight: flight?.total_amount || 0,
+    seats: 0,
+    extras: 0
+  });
 
   useEffect(() => {
     if (isOpen) {
       generateSeats();
+      // Initialize traveler seats structure if not already set
+      if (Object.keys(travelerSeats).length === 0 && travelers.length > 0) {
+        const initialSeats = {};
+        travelers.forEach(traveler => {
+          initialSeats[traveler.id] = {
+            outbound: null,
+            return: null
+          };
+        });
+        setTravelerSeats(initialSeats);
+        setActiveTraveler(travelers[0]?.id || null);
+      }
     }
-  }, [isOpen, isReturn]);
+  }, [isOpen, isReturn, travelers]);
 
   useEffect(() => {
-    // Update total price whenever seat or extras change
-    const seatPrice = selectedSeat ? seats.find(s => s.id === selectedSeat)?.price || 0 : 0;
+    // Calculate seat prices for all travelers
+    let seatPriceTotal = 0;
+    const seatPricePerTraveler = {};
+    
+    Object.entries(travelerSeats).forEach(([travelerId, seatSelection]) => {
+      const outboundSeat = seatSelection.outbound ? seats.find(s => s.id === seatSelection.outbound) : null;
+      const returnSeat = seatSelection.return ? seats.find(s => s.id === seatSelection.return) : null;
+      
+      let travelerSeatPrice = 0;
+      if (outboundSeat) travelerSeatPrice += outboundSeat.price || 0;
+      if (returnSeat) travelerSeatPrice += returnSeat.price || 0;
+      
+      seatPriceTotal += travelerSeatPrice;
+      seatPricePerTraveler[travelerId] = travelerSeatPrice;
+    });
+    
     const extrasTotal = Object.values(selectedExtras).reduce((sum, extra) => sum + (extra.price || 0), 0);
-    setTotalPrice(flight.total_amount + seatPrice + extrasTotal);
-  }, [selectedSeat, selectedExtras, flight.total_amount, seats]);
+    
+    // Update price breakdown
+    setPriceBreakdown({
+      baseFlight: flight?.total_amount || 0,
+      seats: seatPriceTotal,
+      extras: extrasTotal,
+      perTraveler: seatPricePerTraveler
+    });
+    
+    // Update total price
+    setTotalPrice((flight?.total_amount || 0) + seatPriceTotal + extrasTotal);
+  }, [travelerSeats, selectedExtras, flight?.total_amount, seats]);
 
   const generateSeats = () => {
     const cabinClass = flight?.slices?.[isReturn ? 1 : 0]?.segments?.[0]?.passengers?.[0]?.cabin_class_marketing_name || 'Economy';
@@ -78,14 +119,46 @@ const SeatSelectionPanel = ({ isOpen, onClose, flight, onSelectionComplete, trav
   };
 
   const handleSeatClick = (seat) => {
-    if (seat.available) {
-      setSelectedSeat(selectedSeat === seat.id ? null : seat.id);
-    }
+    if (!seat.available || !activeTraveler) return;
+    
+    setTravelerSeats(prev => {
+      const newState = { ...prev };
+      const flightType = isReturn ? 'return' : 'outbound';
+      newState[activeTraveler] = {
+        ...newState[activeTraveler],
+        [flightType]: newState[activeTraveler][flightType] === seat.id ? null : seat.id
+      };
+      return newState;
+    });
   };
 
   const handleConfirmSelection = () => {
-    if (selectedSeat && selectedTraveler) {
+    // Check if all travelers have seats selected for both directions (if round-trip)
+    let allSeatsSelected = true;
+    travelers.forEach(traveler => {
+      const travelerSeatsSelected = travelerSeats[traveler.id];
+      if (!travelerSeatsSelected) {
+        allSeatsSelected = false;
+        return;
+      }
+      
+      if (!travelerSeatsSelected.outbound) {
+        allSeatsSelected = false;
+        return;
+      }
+      
+      // If it's a round trip, check return seats
+      if (flight.slices?.length > 1 && !travelerSeatsSelected.return) {
+        allSeatsSelected = false;
+        return;
+      }
+    });
+    
+    if (allSeatsSelected) {
       setIsExtrasOpen(true);
+    } else {
+      // Show a message or indicator that not all seats are selected
+      alert("Please select seats for all travelers");
     }
   };
 
@@ -97,11 +170,14 @@ const SeatSelectionPanel = ({ isOpen, onClose, flight, onSelectionComplete, trav
       // Prepare final selection data
       const selectedData = {
         flight,
-        seat: seats.find(s => s.id === selectedSeat),
-        traveler: travelers.find(t => t.id === selectedTraveler),
+        travelerSeats: travelers.map(traveler => ({
+          traveler,
+          outboundSeat: seats.find(s => s.id === travelerSeats[traveler.id]?.outbound),
+          returnSeat: flight.slices?.length > 1 ? seats.find(s => s.id === travelerSeats[traveler.id]?.return) : null
+        })),
         extras,
-        totalPrice,
-        isReturn
+        priceBreakdown,
+        totalPrice
       };
       
       // Pass the complete selection data to parent
@@ -110,6 +186,34 @@ const SeatSelectionPanel = ({ isOpen, onClose, flight, onSelectionComplete, trav
       }
       onClose();
     }
+  };
+
+  const isSeatSelected = (seatId) => {
+    // Check if this seat is selected by any traveler for current direction
+    const direction = isReturn ? 'return' : 'outbound';
+    return Object.values(travelerSeats).some(ts => ts[direction] === seatId);
+  };
+
+  const isSeatSelectedByActiveTraveler = (seatId) => {
+    if (!activeTraveler) return false;
+    const direction = isReturn ? 'return' : 'outbound';
+    return travelerSeats[activeTraveler]?.[direction] === seatId;
+  };
+
+  // Get the traveler who selected a particular seat
+  const getTravelerForSeat = (seatId) => {
+    const direction = isReturn ? 'return' : 'outbound';
+    for (const [travelerId, seats] of Object.entries(travelerSeats)) {
+      if (seats[direction] === seatId) {
+        return travelers.find(t => t.id === travelerId);
+      }
+    }
+    return null;
+  };
+
+  // Get seat details by id
+  const getSeatById = (seatId) => {
+    return seats.find(s => s.id === seatId);
   };
 
   if (!isOpen || !flight) return null;
@@ -121,11 +225,16 @@ const SeatSelectionPanel = ({ isOpen, onClose, flight, onSelectionComplete, trav
   const origin = currentSlice?.segments?.[0]?.origin?.iata_code || '';
   const destination = currentSlice?.segments?.[0]?.destination?.iata_code || '';
 
+  // Get progress info - how many travelers need seats
+  const totalTravelers = travelers.length;
+  const direction = isReturn ? 'return' : 'outbound';
+  const seatedTravelers = Object.values(travelerSeats).filter(ts => ts[direction] !== null).length;
+
   return (
     <>
       <div className="fixed inset-0 bg-[#1C1C1C] bg-opacity-30 z-50">
-        <div className="absolute right-0 top-0 h-full w-1/2 bg-white transform transition-transform duration-300 ease-in-out shadow-xl">
-          <div className="p-6 h-full flex flex-col">
+        <div className="absolute right-0 top-0 h-full w-1/2 bg-white transform transition-transform duration-300 ease-in-out shadow-xl overflow-y-auto">
+          <div className="p-6 flex flex-col">
           {/* Header */}
             <div className="flex items-center mb-6">
               <button onClick={() => onClose()} className="p-2 hover:bg-[#F5F5F5] rounded-full">
@@ -134,6 +243,19 @@ const SeatSelectionPanel = ({ isOpen, onClose, flight, onSelectionComplete, trav
               <div className="ml-4">
                 <h2 className="text-xl font-semibold text-[#1C1C1C]">Select Seat & Passenger</h2>
                 <p className="text-sm text-[#737373]">{airline} - Flight {flightNumber}</p>
+              </div>
+            </div>
+
+            {/* Progress indicator */}
+            <div className="mb-4">
+              <div className="text-sm text-[#737373] mb-1">
+                Seat selection progress: {seatedTravelers}/{totalTravelers} travelers
+              </div>
+              <div className="w-full bg-[#F5F5F5] rounded-full h-2">
+                <div 
+                  className="bg-[#1C1C1C] h-2 rounded-full" 
+                  style={{ width: `${(seatedTravelers / totalTravelers) * 100}%` }}
+                />
               </div>
             </div>
 
@@ -168,25 +290,41 @@ const SeatSelectionPanel = ({ isOpen, onClose, flight, onSelectionComplete, trav
               <h3 className="text-sm font-medium text-[#1C1C1C] mb-2">Select Passenger</h3>
               {travelers.length > 0 ? (
                 <div className="grid grid-cols-2 gap-2">
-                  {travelers.map((traveler) => (
-                    <button
-                      key={traveler.id}
-                      onClick={() => setSelectedTraveler(traveler.id)}
-                      className={`
-                        flex items-center gap-2 p-3 rounded-md border-2
-                        ${selectedTraveler === traveler.id 
-                          ? 'border-[#1C1C1C] bg-[#F5F5F5]' 
-                          : 'border-[#EBEBEB] hover:border-[#1C1C1C]'
-                        }
-                      `}
-                    >
-                      <FaUser className="text-[#1C1C1C]" />
-                      <div className="text-left">
-                        <div className="text-sm font-medium">{traveler.name}</div>
-                        <div className="text-xs text-[#737373]">{traveler.department}</div>
-                      </div>
-                    </button>
-                  ))}
+                  {travelers.map((traveler) => {
+                    const direction = isReturn ? 'return' : 'outbound';
+                    const hasSeat = travelerSeats[traveler.id]?.[direction] !== null;
+                    const selectedSeatId = travelerSeats[traveler.id]?.[direction];
+                    const selectedSeat = selectedSeatId ? getSeatById(selectedSeatId) : null;
+                    
+                    return (
+                      <button
+                        key={traveler.id}
+                        onClick={() => setActiveTraveler(traveler.id)}
+                        className={`
+                          flex items-center gap-2 p-3 rounded-md border-2
+                          ${activeTraveler === traveler.id 
+                            ? 'border-[#1C1C1C] bg-[#F5F5F5]' 
+                            : 'border-[#EBEBEB] hover:border-[#1C1C1C]'
+                          }
+                          ${hasSeat ? 'bg-[#F5F5F5]' : ''}
+                        `}
+                      >
+                        <FaUser className={`${hasSeat ? 'text-green-600' : 'text-[#1C1C1C]'}`} />
+                        <div className="text-left flex-1">
+                          <div className="text-sm font-medium">{traveler.name}</div>
+                          <div className="text-xs text-[#737373] flex justify-between">
+                            <span>{traveler.department}</span>
+                            {hasSeat && (
+                              <span className="text-green-600 flex items-center">
+                                <span className="mr-1">✓</span>
+                                <span>{selectedSeat?.number}</span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-4 text-[#737373]">No travelers selected</div>
@@ -194,7 +332,7 @@ const SeatSelectionPanel = ({ isOpen, onClose, flight, onSelectionComplete, trav
             </div>
 
             {/* Seat Map */}
-            <div className="flex-1 overflow-auto">
+            <div>
               <div className="max-w-2xl mx-auto">
                 {/* Airplane Graphic */}
                 <div className="relative mb-4">
@@ -224,68 +362,136 @@ const SeatSelectionPanel = ({ isOpen, onClose, flight, onSelectionComplete, trav
                   </div>
                 </div>
 
+                {/* Active Traveler Info */}
+                {activeTraveler && (
+                  <div className="mb-4 p-2 bg-[#F5F5F5] rounded-md">
+                    <p className="text-sm">
+                      Currently selecting for: <span className="font-medium">
+                        {travelers.find(t => t.id === activeTraveler)?.name}
+                      </span>
+                      {isReturn ? ' (Return flight)' : ' (Outbound flight)'}
+                    </p>
+                  </div>
+                )}
+
                 {/* Seat Grid */}
                 <div className="space-y-2">
                   {loading ? (
                     <div className="text-center py-4 text-[#737373]">Loading seats...</div>
                   ) : (
                     <div className="grid grid-cols-6 gap-1">
-                      {seats.map((seat) => (
-                        <button
-                          key={seat.id}
-                          onClick={() => handleSeatClick(seat)}
-                          className={`
-                            w-8 h-8 rounded flex items-center justify-center text-xs font-medium
-                            ${!seat.available ? 'bg-[#E6E6E6] cursor-not-allowed' : ''}
-                            ${selectedSeat === seat.id ? 'bg-[#1C1C1C] text-white' : 'border-2 border-[#EBEBEB]'}
-                            ${seat.type === 'window' ? 'border-[#1C1C1C]' : ''}
-                            hover:${seat.available ? 'border-[#1C1C1C]' : ''}
-                          `}
-                          disabled={!seat.available}
-                        >
-                          {seat.seat}
-                        </button>
-                      ))}
+                      {seats.map((seat) => {
+                        const isSelectedBySomeone = isSeatSelected(seat.id);
+                        const isSelectedByActive = isSeatSelectedByActiveTraveler(seat.id);
+                        const travelerForSeat = isSelectedBySomeone ? getTravelerForSeat(seat.id) : null;
+                        
+                        return (
+                          <button
+                            key={seat.id}
+                            onClick={() => handleSeatClick(seat)}
+                            className={`
+                              relative w-8 h-8 rounded flex items-center justify-center text-xs font-medium
+                              ${!seat.available || (isSelectedBySomeone && !isSelectedByActive) ? 'bg-[#E6E6E6] cursor-not-allowed' : ''}
+                              ${isSelectedByActive ? 'bg-[#1C1C1C] text-white' : 'border-2 border-[#EBEBEB]'}
+                              ${isSelectedBySomeone && !isSelectedByActive ? 'bg-blue-200' : ''}
+                              ${seat.type === 'window' ? 'border-[#1C1C1C]' : ''}
+                              hover:${seat.available && !isSelectedBySomeone ? 'border-[#1C1C1C]' : ''}
+                            `}
+                            disabled={!seat.available || (isSelectedBySomeone && !isSelectedByActive)}
+                            title={travelerForSeat ? `Selected by ${travelerForSeat.name}` : ''}
+                          >
+                            {seat.seat}
+                            {isSelectedBySomeone && !isSelectedByActive && (
+                              <span className="absolute -top-1 -right-1 bg-blue-500 text-white rounded-full w-3 h-3 flex items-center justify-center" 
+                                title={travelerForSeat?.name || 'Selected'}>
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Footer */}
-          <div className="mt-4 pt-4 border-t border-[#EBEBEB]">
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="text-sm text-[#737373]">Total Price</div>
-                <div className="text-xl font-semibold text-[#1C1C1C]">
-                  {flight.total_currency} {totalPrice.toLocaleString()}
-                </div>
-                <div className="text-sm text-[#737373] mt-1">
-                  Base price: {flight.total_currency} {flight.total_amount.toLocaleString()}
-                </div>
-                {selectedSeat && (
-                  <div className="text-sm text-[#737373]">
-                    Seat selection: + {flight.total_currency} {seats.find(s => s.id === selectedSeat)?.price.toLocaleString()}
+            
+            {/* Footer */}
+            <div className="mt-4 pt-4 border-t border-[#EBEBEB]">
+              <div className="flex flex-col">
+                {/* Price Breakdown Section */}
+                <div className="mb-3">
+                  <div className="text-lg font-semibold text-[#1C1C1C] mb-2">
+                    Price Breakdown
                   </div>
-                )}
-                {Object.keys(selectedExtras).length > 0 && (
-                  <div className="text-sm text-[#737373]">
-                    Extras: + {flight.total_currency} {Object.values(selectedExtras).reduce((sum, extra) => sum + (extra.price || 0), 0).toLocaleString()}
+                  
+                  <div className="flex justify-between items-center mb-1">
+                    <div className="text-sm text-[#737373]">Base flight price</div>
+                    <div className="text-sm font-medium">{flight.total_currency} {priceBreakdown.baseFlight.toLocaleString()}</div>
                   </div>
-                )}
+                  
+                  {/* Seat selection breakdown per traveler */}
+                  {priceBreakdown.seats > 0 && (
+                    <>
+                      <div className="flex justify-between items-center mb-1">
+                        <div className="text-sm text-[#737373]">Seat selection</div>
+                        <div className="text-sm font-medium">{flight.total_currency} {priceBreakdown.seats.toLocaleString()}</div>
+                      </div>
+                      
+                      {/* Per traveler breakdown */}
+                      <div className="pl-4 mb-2">
+                        {Object.entries(priceBreakdown.perTraveler || {}).map(([travelerId, price]) => {
+                          if (price <= 0) return null;
+                          const traveler = travelers.find(t => t.id === travelerId);
+                          if (!traveler) return null;
+                          
+                          const outboundSeatId = travelerSeats[travelerId]?.outbound;
+                          const returnSeatId = travelerSeats[travelerId]?.return;
+                          const outboundSeat = outboundSeatId ? getSeatById(outboundSeatId) : null;
+                          const returnSeat = returnSeatId ? getSeatById(returnSeatId) : null;
+                          
+                          return (
+                            <div key={travelerId} className="flex justify-between items-center text-xs text-[#737373]">
+                              <div>{traveler.name} - {outboundSeat?.number || '-'}{returnSeat ? ` / ${returnSeat.number}` : ''}</div>
+                              <div>{flight.total_currency} {price.toLocaleString()}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                  
+                  {/* Extras */}
+                  {priceBreakdown.extras > 0 && (
+                    <div className="flex justify-between items-center mb-1">
+                      <div className="text-sm text-[#737373]">Extras</div>
+                      <div className="text-sm font-medium">{flight.total_currency} {priceBreakdown.extras.toLocaleString()}</div>
+                    </div>
+                  )}
+                  
+                  {/* Total with tax */}
+                  <div className="flex justify-between items-center pt-2 border-t border-[#EBEBEB]">
+                    <div className="text-sm font-semibold">Total price</div>
+                    <div className="text-xl font-semibold text-[#1C1C1C]">
+                      {flight.total_currency} {totalPrice.toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Continue Button */}
+                <div className="flex justify-end mt-2">
+                  <button
+                    className={`px-6 py-2 rounded-md ${
+                      seatedTravelers === totalTravelers
+                        ? 'bg-[#1C1C1C] text-white hover:bg-opacity-90'
+                        : 'bg-[#F5F5F5] text-[#737373] cursor-not-allowed'
+                    }`}
+                    disabled={seatedTravelers !== totalTravelers}
+                    onClick={handleConfirmSelection}
+                  >
+                    {seatedTravelers === totalTravelers ? 'Continue to Extras' : `Select all seats (${seatedTravelers}/${totalTravelers})`}
+                  </button>
+                </div>
               </div>
-              <button
-                className={`px-6 py-2 rounded-md ${
-                  selectedSeat && selectedTraveler
-                    ? 'bg-[#1C1C1C] text-white hover:bg-opacity-90'
-                    : 'bg-[#F5F5F5] text-[#737373] cursor-not-allowed'
-                }`}
-                disabled={!selectedSeat || !selectedTraveler}
-                onClick={handleConfirmSelection}
-              >
-                Continue to Extras
-              </button>
             </div>
           </div>
         </div>
