@@ -27,6 +27,7 @@ const AddMoreFlights = ({ isOpen, onClose, flight, travelers }) => {
   const flightSlice = flight.slices[0];
   const flightSegment = flightSlice.segments[0];
   const airline = flightSegment.marketing_carrier?.name || 'Unknown Airline';
+  const airlineLogo = flightSegment.marketing_carrier?.logo || 'https://via.placeholder.com/20';
   const flightNumber = flightSegment.marketing_carrier_flight_number || 'Unknown';
   const originCode = flightSlice.origin?.iata_code || 'UNK';
   const originName = flightSlice.origin?.name || 'Unknown';
@@ -128,7 +129,12 @@ const AddMoreFlights = ({ isOpen, onClose, flight, travelers }) => {
                 <div className="text-sm text-gray-500">{flightNumber}</div>
               </div>
               
-              <div className="mb-6">
+              <div className="mb-6 flex items-center gap-2">
+                <img
+                  src={airlineLogo}
+                  alt={`${airline} logo`}
+                  className="w-6 h-6 object-contain"
+                />
                 <div className="font-medium text-gray-900">{airline}</div>
               </div>
 

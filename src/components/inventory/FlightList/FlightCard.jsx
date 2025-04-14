@@ -13,13 +13,13 @@ const FlightCard = ({ flight, onClick, travelers }) => {
     const departTime = new Date(flight.departureTime);
     const arriveTime = new Date(flight.arrivalTime);
     const diffMs = arriveTime - departTime;
-    const totalMinutes = Math.round(diffMs / 60000); // Total minutes
+    const totalMinutes = Math.round(diffMs / 60000); 
 
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
 
-    if (hours === 0) return `${minutes}mins`; // e.g., "45mins"
-    return `${hours}hr ${minutes}mins`; // e.g., "1hr 56mins"
+    if (hours === 0) return `${minutes}mins`;
+    return `${hours}hr ${minutes}mins`; 
   };
 
   // Check if this is a return trip (more than one slice)
