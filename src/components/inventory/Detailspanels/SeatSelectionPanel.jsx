@@ -501,6 +501,7 @@ const SeatSelectionPanel = ({ isOpen, onClose, flight, onSelectionComplete, trav
         isOpen={isExtrasOpen}
         onClose={handleExtrasClose}
         flight={flight}
+        travelers={travelers}
         basePrice={totalPrice}
         currentExtras={selectedExtras}
       />

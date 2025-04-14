@@ -225,6 +225,8 @@ const FlightExtrasPanel = ({ isOpen, onClose, basePrice = 0, flight, travelers =
       <AddMoreFlights
         isOpen={isMoreFlightsOpen}
         onClose={() => setIsMoreFlightOpen(false)}
+        flight={flight}
+        travelers={travelers}
       />
     </div>
   );

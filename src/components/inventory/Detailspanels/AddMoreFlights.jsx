@@ -3,112 +3,159 @@ import { MdFlightTakeoff, MdHotel, MdDirectionsBus, MdLocationOn } from 'react-i
 import CheckOutPanel from './CheckoutPanel';
 import { FaRegArrowAltCircleLeft } from "react-icons/fa";
 
-const AddMoreFlights = ({ isOpen, onClose }) => {
-  const [openCheckoutPanel, setOpenCheckoutPanel] = useState(false)
-
-
-  const travelers = [
-    { id: 1, name: 'Thomas J Warburg', type: 'Engineer', avatar: '/api/placeholder/40/40' },
-    { id: 2, name: 'Jonas Kibali Twiga', type: 'Sales', avatar: '/api/placeholder/40/40' }
-  ];
+const AddMoreFlights = ({ isOpen, onClose, flight, travelers }) => {
+  const [openCheckoutPanel, setOpenCheckoutPanel] = useState(false);
 
   if (!isOpen) return null;
 
+  // Function to format dates like "TUE,16 • 14:05"
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Unknown';
+    const date = new Date(dateString);
+    const weekday = date.toLocaleString('en-US', { weekday: 'short' }).toUpperCase();
+    const day = date.getDate();
+    const time = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    return `${weekday},${day} • ${time}`;
+  };
+
+  // Check if flight data is available
+  if (!flight || !flight.slices || !flight.slices[0] || !flight.slices[0].segments || !flight.slices[0].segments[0]) {
+    return <div>No flight data available</div>;
+  }
+
+  // Extract flight details
+  const flightSlice = flight.slices[0];
+  const flightSegment = flightSlice.segments[0];
+  const airline = flightSegment.marketing_carrier?.name || 'Unknown Airline';
+  const flightNumber = flightSegment.marketing_carrier_flight_number || 'Unknown';
+  const originCode = flightSlice.origin?.iata_code || 'UNK';
+  const originName = flightSlice.origin?.name || 'Unknown';
+  const destinationCode = flightSlice.destination?.iata_code || 'UNK';
+  const destinationName = flightSlice.destination?.name || 'Unknown';
+  const departureTime = formatDate(flightSegment.departing_at);
+  const arrivalTime = formatDate(flightSegment.arriving_at);
+  
+  // Extract city name from destination
+  const getDestinationCity = () => {
+    // First check if destination data has a city property
+    if (flightSlice.destination?.city) {
+      return flightSlice.destination.city;
+    }
+    
+    // If no city property exists, try to extract city from the airport name
+    // This is a simplified approach - in a real app, you might have a more robust solution
+    const airportName = destinationName;
+    
+    // Remove words like "International Airport", "Airport", etc.
+    let cityName = airportName
+      .replace(/\b(international|airport|regional|municipal|metropolitan)\b/gi, '')
+      .trim();
+      
+    // Remove any trailing commas or whitespace
+    cityName = cityName.replace(/,\s*$/, '').trim();
+    
+    // If there's nothing left after stripping those words, return the original name
+    return cityName || destinationName;
+  };
+  
+  const destinationCity = getDestinationCity();
+
   return (
     <div className="fixed inset-0 bg-white z-50 overflow-auto">
-      <div className="w-full px-32 pt-5 font-inter mb-10">
+      <div className="max-w-6xl mx-auto px-6 lg:px-8 pt-6 pb-12 font-inter">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8 relative">
+        <div className="flex items-center mb-8 relative">
           <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            aria-label="Go back"
           >
             <FaRegArrowAltCircleLeft className="w-6 h-6 text-gray-900" />
           </button>
           <div className="absolute left-1/2 -translate-x-1/2">
-            <h1 className="text-heading-2 text-gray-900">Client Trip To Materuni</h1>
+            <h1 className="text-xl font-semibold text-gray-900">Client Trip To {destinationCity}</h1>
           </div>
         </div>
 
-        <div className='px-10'>
+        <div className="max-w-4xl mx-auto">
           {/* Services */}
-          <div className="mb-8">
-            <h3 className="text-label-1-medium mb-4">Add other service</h3>
-            <div className="flex gap-4 p-4 border border-gray-200 rounded-lg justify-center">
-              <button className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 rounded text-gray-900">
+          <section className="mb-10">
+            <h3 className="text-base font-medium text-gray-900 mb-4">Add other service</h3>
+            <div className="flex flex-wrap gap-2 sm:gap-4 p-4 border border-gray-200 rounded-lg justify-center">
+              <button className="flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50 rounded-md text-gray-900 transition">
                 <MdFlightTakeoff className="w-5 h-5" />
                 <span>Flights</span>
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 rounded text-gray-900">
+              <button className="flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50 rounded-md text-gray-900 transition">
                 <MdHotel className="w-5 h-5" />
                 <span>Hotels</span>
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 rounded text-gray-900">
+              <button className="flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50 rounded-md text-gray-900 transition">
                 <MdDirectionsBus className="w-5 h-5" />
                 <span>Buses</span>
               </button>
             </div>
-          </div>
+          </section>
 
           {/* Travelers */}
-          <div className="mb-8">
-            <h3 className="text-label-1-medium mb-4">Travelers</h3>
-            <div className="grid grid-cols-2 gap-4">
+          <section className="mb-10">
+            <h3 className="text-base font-medium text-gray-900 mb-4">Travelers</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {travelers.map(traveler => (
-                <div key={traveler.id} className="flex items-center gap-3 bg-gray-50 p-4 rounded-lg">
+                <div key={traveler.id} className="flex items-center gap-3 bg-gray-50 p-4 rounded-lg hover:bg-gray-100 transition">
                   <img
-                    src={traveler.avatar}
+                    src={traveler.avatar || '/api/placeholder/40/40'}
                     alt={traveler.name}
-                    className="w-10 h-10 rounded-full"
+                    className="w-10 h-10 rounded-full object-cover"
                   />
                   <div>
                     <div className="font-medium text-gray-900">{traveler.name}</div>
-                    <div className="text-sm text-gray-500">{traveler.type}</div>
+                    {traveler.type && <div className="text-sm text-gray-500">{traveler.type}</div>}
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
 
           {/* Travel Itinerary */}
-          <div className="mb-8">
-            <h3 className="text-label-1-medium mb-4">Travel Itinerary</h3>
+          <section className="mb-10">
+            <h3 className="text-base font-medium text-gray-900 mb-4">Travel Itinerary</h3>
 
             {/* Flight */}
-            <div className="bg-gray-50 rounded-lg p-6 mb-4">
-              <div className="text-label-1-medium mb-4">Flight</div>
-              <div className="mb-4">
-                <div className="font-medium text-gray-900">Precision Air</div>
+            <div className="bg-gray-50 rounded-lg p-6 mb-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-base font-medium text-gray-900">Flight</div>
+                <div className="text-sm text-gray-500">{flightNumber}</div>
+              </div>
+              
+              <div className="mb-6">
+                <div className="font-medium text-gray-900">{airline}</div>
               </div>
 
-              <div className="flex items-center gap-8 mb-4">
-                <div>
-                  <div className="font-medium text-gray-900">DAR</div>
-                  <div className="text-sm text-gray-500">Dar es salaam</div>
-                  <div className="text-sm text-gray-500">TUE,16 • 14:05</div>
+              <div className="flex items-center gap-4 mb-6">
+                <div className="text-center">
+                  <div className="text-xl font-medium text-gray-900">{originCode}</div>
+                  <div className="text-sm text-gray-500">{originName}</div>
+                  <div className="text-sm text-gray-500 mt-1">{departureTime}</div>
                 </div>
                 <div className="flex-1 border-t border-dashed border-gray-300 relative">
                   <div className="absolute left-0 top-1/2 w-2 h-2 bg-gray-400 rounded-full -mt-1"></div>
                   <div className="absolute right-0 top-1/2 w-2 h-2 bg-gray-400 rounded-full -mt-1"></div>
                 </div>
-                <div>
-                  <div className="font-medium text-gray-900">KLM</div>
-                  <div className="text-sm text-gray-500">Kilimanjaro</div>
-                  <div className="text-sm text-gray-500">TUE,16 • 16:05</div>
+                <div className="text-center">
+                  <div className="text-xl font-medium text-gray-900">{destinationCode}</div>
+                  <div className="text-sm text-gray-500">{destinationName}</div>
+                  <div className="text-sm text-gray-500 mt-1">{arrivalTime}</div>
                 </div>
-              </div>
-              <div className="text-sm text-gray-500">
-                <div>GE 822</div>
-                <div>Ref # F268X65</div>
               </div>
             </div>
 
             {/* Stay */}
-            <div className="bg-gray-50 rounded-lg p-6">
-              <div className="text-label-1-medium mb-4">Stay</div>
+            <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
+              <div className="text-base font-medium text-gray-900 mb-4">Stay</div>
               <div>
                 <div className="font-medium text-gray-900 mb-1">Four Points By Sheraton</div>
-                <div className="text-sm text-gray-500 mb-4 flex items-start gap-1">
+                <div className="text-sm text-gray-500 mb-6 flex items-start gap-1">
                   <MdLocationOn className="w-4 h-4 mt-0.5 flex-shrink-0" />
                   <div>
                     KL201 Service Road, Arusha broadway<br />
@@ -116,54 +163,57 @@ const AddMoreFlights = ({ isOpen, onClose }) => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+                  <div className="bg-white p-3 rounded-md">
                     <div className="text-sm text-gray-500">Check-In</div>
-                    <div className="text-gray-900">Mon, Jun 6</div>
+                    <div className="text-gray-900 font-medium">Mon, Jun 6</div>
                     <div className="text-sm text-gray-500">17:00</div>
                   </div>
-                  <div>
+                  <div className="bg-white p-3 rounded-md">
                     <div className="text-sm text-gray-500">Check-Out</div>
-                    <div className="text-gray-900">Thu, Jun 9</div>
+                    <div className="text-gray-900 font-medium">Thu, Jun 9</div>
                     <div className="text-sm text-gray-500">11:00</div>
                   </div>
-                  <div>
+                  <div className="bg-white p-3 rounded-md">
                     <div className="text-sm text-gray-500">Booking ID</div>
-                    <div className="text-gray-900">F268X65</div>
+                    <div className="text-gray-900 font-medium">F268X65</div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="bg-white p-3 rounded-md">
                     <div className="text-sm text-gray-500">Room Type</div>
-                    <div className="text-gray-900">Classic Suite</div>
+                    <div className="text-gray-900 font-medium">Classic Suite</div>
                   </div>
-                  <div>
+                  <div className="bg-white p-3 rounded-md">
                     <div className="text-sm text-gray-500">Rooms</div>
-                    <div className="text-gray-900">02</div>
+                    <div className="text-gray-900 font-medium">02</div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </section>
 
           {/* Confirmation Section */}
-          <div className="border border-gray-200 rounded-lg p-4">
-            <div className="flex justify-between items-center mb-4">
+          <section className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
+            <div className="flex justify-between items-center mb-6">
               <div>
                 <div className="text-sm text-gray-500">Total price of trip</div>
-                <div className="text-xl font-semibold text-gray-900">Ksh. 300,000</div>
+                <div className="text-2xl font-semibold text-gray-900 mt-1">
+                  {flight.total_currency} {flight.total_amount.toLocaleString()}
+                </div>
               </div>
             </div>
-            <button className="w-full bg-gray-900 text-white py-3 rounded-lg hover:bg-gray-800 transition-colors"
+            <button
+              className="w-full bg-gray-900 text-white py-3.5 rounded-lg hover:bg-gray-800 transition-colors font-medium"
               onClick={() => setOpenCheckoutPanel(true)}
             >
               Continue
             </button>
-            <div className="text-center text-sm text-gray-500 mt-2">
+            <div className="text-center text-sm text-gray-500 mt-3">
               You won't be charged yet
             </div>
-          </div>
+          </section>
         </div>
       </div>
 
