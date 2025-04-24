@@ -1,23 +1,75 @@
-# Travel Management System Backend
+# Business Travel Management App 🧳
 
-## Overview
-The Travel Management System Backend is a robust Laravel-based solution designed to streamline corporate travel. It handles everything from secure user authentication to dynamic trip management, expense reporting, and policy enforcement. Integrated with top travel APIs, the app enables smooth bookings for flights, hotels, and car rentals while ensuring secure payment processing and real-time notifications.
+A React-based platform that streamlines corporate travel — from trip booking to expense reimbursement — with dedicated dashboards for administrators and employees.
 
-## Key Features
-- **User & Role Management:** Secure multi-role authentication (e.g., Admin, Employee) with tailored access controls.
-- **Trip Management:** Create, modify, and track trips with real-time updates and detailed itineraries.
-- **Expense Reporting:** Automated tracking and comprehensive reporting of travel expenses.
-- **Policy Enforcement:** Define and enforce company travel policies with built-in approval workflows.
-- **External API Integrations:** Seamless connections to leading travel booking APIs for flights, hotels, and car rentals.
-- **Payment Processing:** Secure payment gateway integrations for efficient transaction handling.
-- **Notifications & Alerts:** Real-time email and in-app notifications keep users informed.
-- **Analytics & Reporting:** Advanced data insights to optimize travel budgets and company policies.
 
-## Tailwind CSS Setup
-For a modern and responsive frontend, the project uses Tailwind CSS alongside Vite. Set up your development environment with the following commands:
+## ✨ Features
+
+### For Administrators 👔
+- **Policy Management**: Create travel policies and configure approval workflows
+- **Trip Oversight**: View company-wide trips and resolve pending requests
+- **Company Settings**: Manage payment methods, team access, and integrations
+- **Analytics**: Track spending trends and policy compliance
+
+### For Employees 👩‍💼👨‍💼
+- **Trip Booking**: Search and book flights, hotels, and rental cars
+- **Expense Reporting**: Submit and track expenses
+- **Approval Workflows**: Request approval for out-of-policy bookings
+- **Self-Service**: Access travel resources and chat support
+
+## 🛠️ Built With
+
+- React.js
+- Redux for state management 
+- React Router for navigation
+- Styled Components for UI
+- Jest & React Testing Library
+- Node.js & Express backend
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js v16+
+- npm v8+ or Yarn v1.22+
+
+### Installation
 
 ```bash
-npm install -D tailwind postcss autoprefixer vite
-npx tailwindcss init
-npm i tailwindcss-animate
-npm run dev
+# Clone repository
+git clone https://github.com/yourusername/business-travel-app.git
+
+# Install dependencies
+cd business-travel-app
+npm install
+
+# Start development server
+npm start
+```
+
+### Environment Setup
+
+Create a `.env` file in the root directory:
+
+```
+REACT_APP_API_URL=your_api_url
+REACT_APP_AUTH_DOMAIN=your_auth_domain
+REACT_APP_CLIENT_ID=your_client_id
+```
+
+## 🚢 Deployment
+
+Deploy to your preferred platform:
+- AWS Amplify
+- Vercel
+- Netlify
+- Firebase Hosting
+
+
+## 🤝 Contributing
+
+We welcome contributions! Check out our [Contributing Guide](./CONTRIBUTING.md) to get started. Whether you're fixing bugs, adding features, or improving documentation - we'd love your help!
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
