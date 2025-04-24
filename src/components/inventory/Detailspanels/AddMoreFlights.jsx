@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { MdFlightTakeoff, MdHotel, MdDirectionsBus, MdLocationOn } from 'react-icons/md';
+import { IoIosAirplane } from 'react-icons/io';
 import CheckOutPanel from './CheckoutPanel';
-import { FaRegArrowAltCircleLeft } from "react-icons/fa";
+import { FaRegArrowAltCircleLeft } from 'react-icons/fa';
 
 const AddMoreFlights = ({ isOpen, onClose, flight, travelers }) => {
   const [openCheckoutPanel, setOpenCheckoutPanel] = useState(false);
@@ -16,6 +17,21 @@ const AddMoreFlights = ({ isOpen, onClose, flight, travelers }) => {
     const day = date.getDate();
     const time = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
     return `${weekday},${day} • ${time}`;
+  };
+
+  // Calculate flight duration in "Xhr Ymins" format
+  const calculateDuration = () => {
+    if (!flightSegment.departing_at || !flightSegment.arriving_at) return 'N/A';
+    const departTime = new Date(flightSegment.departing_at);
+    const arriveTime = new Date(flightSegment.arriving_at);
+    const diffMs = arriveTime - departTime;
+    const totalMinutes = Math.round(diffMs / 60000);
+
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    if (hours === 0) return `${minutes}mins`;
+    return `${hours}hr ${minutes}mins`;
   };
 
   // Check if flight data is available
@@ -35,30 +51,22 @@ const AddMoreFlights = ({ isOpen, onClose, flight, travelers }) => {
   const destinationName = flightSlice.destination?.name || 'Unknown';
   const departureTime = formatDate(flightSegment.departing_at);
   const arrivalTime = formatDate(flightSegment.arriving_at);
-  
+  const isReturnTrip = flight.slices.length > 1;
+
   // Extract city name from destination
   const getDestinationCity = () => {
-    // First check if destination data has a city property
     if (flightSlice.destination?.city) {
       return flightSlice.destination.city;
     }
-    
-    // If no city property exists, try to extract city from the airport name
-    // This is a simplified approach - in a real app, you might have a more robust solution
     const airportName = destinationName;
-    
-    // Remove words like "International Airport", "Airport", etc.
     let cityName = airportName
       .replace(/\b(international|airport|regional|municipal|metropolitan)\b/gi, '')
+      .trim()
+      .replace(/,\s*$/, '')
       .trim();
-      
-    // Remove any trailing commas or whitespace
-    cityName = cityName.replace(/,\s*$/, '').trim();
-    
-    // If there's nothing left after stripping those words, return the original name
     return cityName || destinationName;
   };
-  
+
   const destinationCity = getDestinationCity();
 
   return (
@@ -102,8 +110,11 @@ const AddMoreFlights = ({ isOpen, onClose, flight, travelers }) => {
           <section className="mb-10">
             <h3 className="text-base font-medium text-gray-900 mb-4">Travelers</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {travelers.map(traveler => (
-                <div key={traveler.id} className="flex items-center gap-3 bg-gray-50 p-4 rounded-lg hover:bg-gray-100 transition">
+              {travelers.map((traveler) => (
+                <div
+                  key={traveler.id}
+                  className="flex items-center gap-3 bg-gray-50 p-4 rounded-lg hover:bg-gray-100 transition"
+                >
                   <img
                     src={traveler.avatar || '/api/placeholder/40/40'}
                     alt={traveler.name}
@@ -128,7 +139,7 @@ const AddMoreFlights = ({ isOpen, onClose, flight, travelers }) => {
                 <div className="text-base font-medium text-gray-900">Flight</div>
                 <div className="text-sm text-gray-500">{flightNumber}</div>
               </div>
-              
+
               <div className="mb-6 flex items-center gap-2">
                 <img
                   src={airlineLogo}
@@ -144,9 +155,18 @@ const AddMoreFlights = ({ isOpen, onClose, flight, travelers }) => {
                   <div className="text-sm text-gray-500">{originName}</div>
                   <div className="text-sm text-gray-500 mt-1">{departureTime}</div>
                 </div>
-                <div className="flex-1 border-t border-dashed border-gray-300 relative">
-                  <div className="absolute left-0 top-1/2 w-2 h-2 bg-gray-400 rounded-full -mt-1"></div>
-                  <div className="absolute right-0 top-1/2 w-2 h-2 bg-gray-400 rounded-full -mt-1"></div>
+                <div className="flex-1 flex flex-col items-center justify-center">
+                  <div className="w-full flex items-center justify-center">
+                    <div className="h-px flex-1 border-t-2 border-dashed border-gray-300"></div>
+                    <div className="mx-2 text-gray-400 relative">
+                      <IoIosAirplane className="-rotate-45" />
+                      {isReturnTrip && (
+                        <span className="absolute -top-2 -right-2 text-xs text-blue-500">↔</span>
+                      )}
+                    </div>
+                    <div className="h-px flex-1 border-t-2 border-dashed border-gray-300"></div>
+                  </div>
+                  <span className="text-xs text-gray-500 mt-2">{calculateDuration()}</span>
                 </div>
                 <div className="text-center">
                   <div className="text-xl font-medium text-gray-900">{destinationCode}</div>
