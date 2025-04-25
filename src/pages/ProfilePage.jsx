@@ -15,6 +15,7 @@ const ProfilePage = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   const [userProfile, setUserProfile] = useState(null);
+  const [policyName, setPolicyName] = useState('Loading...');
   const [isPersonalModalOpen, setIsPersonalModalOpen] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
@@ -25,18 +26,26 @@ const ProfilePage = ({ isOpen, onClose }) => {
   const { logout } = useAuth();
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const fetchUserProfileAndPolicy = async () => {
       try {
-        const response = await api.get('/user');
-        setUserProfile(response.data.user);
+        // Fetch user profile
+        const userResponse = await api.get('/user');
+        setUserProfile(userResponse.data.user);
+
+        // Fetch policy
+        const policyResponse = await api.get('/policies');
+        const policyData = Array.isArray(policyResponse.data) && policyResponse.data.length > 0 ? policyResponse.data[0] : null;
+        setPolicyName(policyData ? policyData.name : 'Standard travel policy');
       } catch (error) {
-        console.error('Failed to fetch user profile:', error);
+        console.error('Failed to fetch data:', error);
         if (error.response?.status === 401) {
           navigate('/login', { replace: true });
         }
+        // Set fallback policy name if policy fetch fails
+        setPolicyName('Standard travel policy');
       }
     };
-    fetchUserProfile();
+    fetchUserProfileAndPolicy();
   }, [navigate]);
 
   const handleProfileUpdate = (updatedUser) => {
@@ -121,7 +130,7 @@ const ProfilePage = ({ isOpen, onClose }) => {
                   <FaArrowRight />
                 </button>
               </div>
-              <p className="mt-2 text-sm text-gray-500">Standard travel policy</p>
+              <p className="mt-2 text-sm text-gray-500">{policyName}</p>
             </div>
 
             {/* Preferences */}
