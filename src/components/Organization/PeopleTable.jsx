@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { IoPerson } from 'react-icons/io5';
-import { FaPlus } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 // Configure Axios with base URL and auth token
-axios.defaults.baseURL = 'http://localhost:8000'; // Adjust if your backend is on a different port
+axios.defaults.baseURL = 'http://localhost:8000'; 
 axios.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token'); // Adjust based on where you store the token
+  const token = localStorage.getItem('token'); 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -69,7 +69,9 @@ const PeopleTable = () => {
   const currentItems = filteredData.slice(startIndex, startIndex + itemsPerPage);
 
   const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
   };
 
   // Handle adding a new user
@@ -80,7 +82,7 @@ const PeopleTable = () => {
       name: formData.get('name'),
       email: formData.get('email'),
       password: formData.get('password'),
-      role: formData.get('role'), // 'admin' or 'employee'
+      role: formData.get('role'),
       department_id: formData.get('department_id'),
     };
     try {
@@ -100,83 +102,119 @@ const PeopleTable = () => {
   if (error) return <div className="p-6 text-center text-red-600">{error}</div>;
 
   return (
-    <div className="p-6">
+    <div className="shadow-sm mb-6">
       {/* Header with Search and Add Button */}
-      <div className="flex justify-between items-center mb-4">
-        <input
-          type="text"
-          placeholder="Search people..."
-          className="border border-gray-300 rounded-md px-3 py-2 w-1/3"
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setCurrentPage(1);
-          }}
-        />
-        <button
-          className="px-3 py-2 bg-gray-900 text-white rounded-md flex items-center gap-2 text-sm hover:bg-gray-800"
-          onClick={() => setIsAddModalOpen(true)}
-        >
-          <IoPerson />
-          <span>Add new</span>
-          <FaPlus className="text-sm" />
-        </button>
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-xl font-semibold text-gray-900">People</h2>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search by name or email"
+                className="w-64 pl-8 pr-4 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
+            </div>
+            <button
+              className="px-3 py-2 bg-gray-900 text-white rounded-md flex items-center gap-2 text-sm hover:bg-gray-800"
+              onClick={() => setIsAddModalOpen(true)}
+            >
+              <IoPerson />
+              <span>Add new</span>
+              <FaPlus className="text-sm" />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border border-gray-200">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Name</th>
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Email</th>
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Phone</th>
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Department</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentItems.length === 0 ? (
-              <tr>
-                <td colSpan="4" className="px-4 py-2 text-center text-sm text-gray-700">
-                  No users found.
-                </td>
+      <div className="bg-white p-2 rounded-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="w-6 p-4">
+                  <input type="checkbox" className="rounded border-gray-300" />
+                </th>
+                <th className="px-4 text-left font-medium text-sm text-gray-600">Name</th>
+                <th className="px-4 text-left font-medium text-sm text-gray-600">Email</th>
+                <th className="px-4 text-left font-medium text-sm text-gray-600">Phone</th>
+                <th className="px-4 text-left font-medium text-sm text-gray-600">Department</th>
               </tr>
-            ) : (
-              currentItems.map((person) => (
-                <tr key={person.id} className="border-t">
-                  <td className="px-4 py-2 text-sm text-gray-700">{person.name}</td>
-                  <td className="px-4 py-2 text-sm text-gray-700">{person.email}</td>
-                  <td className="px-4 py-2 text-sm text-gray-700">{person.phone || 'N/A'}</td>
-                  <td className="px-4 py-2 text-sm text-gray-700">
-                    {departments[person.department_id] || 'N/A'}
+            </thead>
+            <tbody>
+              {currentItems.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-4 py-2 text-center text-sm text-gray-700">
+                    No users found.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="mt-4 flex justify-center gap-2">
-          <button
-            className="px-3 py-1 border rounded-md disabled:opacity-50"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            Previous
-          </button>
-          <span className="px-3 py-1">Page {currentPage} of {totalPages}</span>
-          <button
-            className="px-3 py-1 border rounded-md disabled:opacity-50"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            Next
-          </button>
+              ) : (
+                currentItems.map((person) => (
+                  <tr key={person.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="p-4">
+                      <input type="checkbox" className="rounded border-gray-300" />
+                    </td>
+                    <td className="p-4 text-sm">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gray-200"></div>
+                        <span>{person.name}</span>
+                      </div>
+                    </td>
+                    <td className="p-4 text-sm text-gray-600">{person.email}</td>
+                    <td className="p-4 text-sm text-gray-600">{person.phone || 'N/A'}</td>
+                    <td className="p-4 text-sm text-gray-600">
+                      {departments[person.department_id] || 'N/A'}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-4 flex justify-between items-center">
+            <div className="text-sm text-gray-600">
+              Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredData.length)} of {filteredData.length} users
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                className="px-3 py-1 border border-gray-200 rounded-md disabled:opacity-50 hover:bg-gray-50"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <FaChevronLeft />
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  className={`px-3 py-1 border border-gray-200 rounded-md ${
+                    currentPage === page ? 'bg-blue-500 text-white' : 'hover:bg-gray-50'
+                  }`}
+                  onClick={() => handlePageChange(page)}
+                >
+                  {page}
+                </button>
+              ))}
+              <button
+                className="px-3 py-1 border border-gray-200 rounded-md disabled:opacity-50 hover:bg-gray-50"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                <FaChevronRight />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Add User Modal */}
       {isAddModalOpen && (
@@ -238,7 +276,7 @@ const PeopleTable = () => {
               </div>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                className="px-4 py-2 bg-gray-900 text-white rounded-md text-sm hover:bg-gray-800"
               >
                 Add User
               </button>

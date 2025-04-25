@@ -122,8 +122,8 @@ const TravelerModal = ({ isOpen, onClose, onSelect, selectedTravelers }) => {
                 onClick={() => onSelect(employee)}
                 className={`p-3 rounded-md border-2 flex items-center gap-2 ${
                   selectedTravelers.some((t) => t.id === employee.id)
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-blue-300'
+                    ? 'bg-gray-900 bg-black-50'
+                    : 'border-gray-200 hover:bg-gray-100'
                 }`}
               >
                 <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
@@ -148,7 +148,7 @@ const TravelerModal = ({ isOpen, onClose, onSelect, selectedTravelers }) => {
           </button>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="px-4 py-2 bg-gray-900 text-white rounded-md text-sm hover:bg-gray-800"
           >
             Done
           </button>
