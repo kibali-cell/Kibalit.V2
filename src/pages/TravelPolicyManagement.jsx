@@ -1,14 +1,15 @@
-import { useState } from 'react';
-import axios from 'axios'; // Ensure axios is installed: npm install axios
+import { useState, useEffect } from 'react';
+import axios from 'axios'; 
 import { IoClose, IoDocument } from 'react-icons/io5';
 import { IoMdAdd } from 'react-icons/io';
 import { PiArrowBendDownRightThin } from 'react-icons/pi';
 
 const TravelPolicyManagement = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState('policy');
+  const [userRoles, setUserRoles] = useState([]);
   const [policy, setPolicy] = useState({
     name: 'Standard travel policy',
-    company_id: 1, // Replace with a valid company_id from your database
+    company_id: null, 
     flight_dynamic_pricing: true,
     flight_price_threshold_percent: 20,
     flight_max_amount: 350000,
@@ -33,6 +34,34 @@ const TravelPolicyManagement = ({ isOpen, onClose }) => {
     ],
   });
 
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          alert('You must be logged in.');
+          return;
+        }
+        const response = await axios.get('http://localhost:8000/api/user', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        const user = response.data.user; // Access the nested 'user' object
+        // console.log('User data:', user); 
+        setPolicy((prev) => ({ ...prev, company_id: user.company_id }));
+        setUserRoles(user.roles.map(role => role.slug));
+      } catch (error) {
+        console.error('Error fetching user data:', error.response?.data || error.message);
+        alert('Failed to fetch user data.');
+      }
+    };
+  
+    if (isOpen) {
+      fetchUserData();
+    }
+  }, [isOpen]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     const numericFields = [
@@ -52,10 +81,20 @@ const TravelPolicyManagement = ({ isOpen, onClose }) => {
   };
 
   const handlePolicySubmit = async () => {
+    if (!userRoles.includes('travel_admin') && !userRoles.includes('super_admin')) {
+      alert('You do not have permission to create policies.');
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
       if (!token) {
         alert('You must be logged in to save a policy.');
+        return;
+      }
+
+      if (!policy.company_id) {
+        alert('Company ID not loaded. Please wait or refresh.');
         return;
       }
 
@@ -65,7 +104,7 @@ const TravelPolicyManagement = ({ isOpen, onClose }) => {
         hotel_price_threshold_percent: policy.hotel_dynamic_pricing ? policy.hotel_price_threshold_percent : null,
       };
 
-      console.log('Policy Payload:', payload); // Debug payload
+    //  console.log('Policy Payload:', payload);  Debug payload
       const response = await axios.post('http://localhost:8000/api/policies', payload, {
         headers: {
           'Content-Type': 'application/json',
@@ -75,7 +114,7 @@ const TravelPolicyManagement = ({ isOpen, onClose }) => {
       });
       const newPolicy = response.data;
       setPolicy((prev) => ({ ...prev, id: newPolicy.id }));
-      console.log('Policy created:', newPolicy);
+      // console.log('Policy created:', newPolicy);
       alert('Policy saved successfully!');
     } catch (error) {
       console.error('Error saving policy:', error.response?.data || error.message);
@@ -109,7 +148,7 @@ const TravelPolicyManagement = ({ isOpen, onClose }) => {
           },
         }
       );
-      console.log('Approval created:', response.data);
+      // console.log('Approval created:', response.data);
       alert('Approvals saved successfully!');
     } catch (error) {
       console.error('Error saving approvals:', error.response?.data || error.message);
@@ -132,6 +171,8 @@ const TravelPolicyManagement = ({ isOpen, onClose }) => {
       '6-10 hour flights',
       '10+ hour flights',
     ];
+
+    if (!isOpen) return null;
 
     return (
       <div className="space-y-4">
