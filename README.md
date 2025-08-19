@@ -1,75 +1,82 @@
-# Business Travel Management App 🧳
+# Kibalit.V2 - Business Travel Management Platform
 
-A React-based platform that streamlines corporate travel — from trip booking to expense reimbursement — with dedicated dashboards for administrators and employees.
+Welcome to **Kibalit.V2**, a modern React-based platform designed to simplify corporate travel management. With tailored interfaces for administrators and employees, it streamlines trip booking, expense reporting, and approval workflows, making business travel efficient and hassle-free.
 
+## 🌟 Features
 
-## ✨ Features
+### For Administrators 🧑‍💼
+- **Policy Management**: Define and enforce travel policies with customizable approval workflows.
+- **Trip Oversight**: Monitor all company trips and manage pending requests in real-time.
+- **Analytics Dashboard**: Gain insights into spending patterns and policy adherence.
+- **Company Configuration**: Set up payment methods, team permissions, and third-party integrations.
 
-### For Administrators 👔
-- **Policy Management**: Create travel policies and configure approval workflows
-- **Trip Oversight**: View company-wide trips and resolve pending requests
-- **Company Settings**: Manage payment methods, team access, and integrations
-- **Analytics**: Track spending trends and policy compliance
+### For Employees 👩‍💻👨‍💻
+- **Trip Booking**: Easily search and book flights, hotels, and rental cars.
+- **Expense Tracking**: Submit, track, and manage expense reports seamlessly.
+- **Approval Requests**: Request approvals for out-of-policy bookings with clear communication.
+- **Self-Service Tools**: Access travel resources and live chat support for quick assistance.
 
-### For Employees 👩‍💼👨‍💼
-- **Trip Booking**: Search and book flights, hotels, and rental cars
-- **Expense Reporting**: Submit and track expenses
-- **Approval Workflows**: Request approval for out-of-policy bookings
-- **Self-Service**: Access travel resources and chat support
+## 🛠️ Tech Stack
+- **Frontend**: React.js, Redux (state management), React Router (navigation), Styled Components (UI)
+- **Backend**: Node.js, Express
+- **Testing**: Jest, React Testing Library
+- **Deployment**: Supports AWS Amplify, Vercel, Netlify, or Firebase Hosting
 
-## 🛠️ Built With
-
-- React.js
-- Redux for state management 
-- React Router for navigation
-- Styled Components for UI
-- Jest & React Testing Library
-- Node.js & Express backend
+<xaiArtifact artifact_id="018a968a-aae4-4789-8add-6d7ce56127ce" artifact_version_id="6b0184aa-1014-4073-9549-5d1855a4bf55" title="README.md" contentType="text/markdown">
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-
-- Node.js v16+
+- Node.js v16 or higher
 - npm v8+ or Yarn v1.22+
+- A valid API key and authentication domain for backend services
 
 ### Installation
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/kibali-cell/Kibalit.V2.git
+   cd Kibalit.V2
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm start
+   ```
 
-```bash
-# Clone repository
-git clone https://github.com/kibali-cell/business-travel-app.git
-
-# Install dependencies
-cd business-travel-app
-npm install
-
-# Start development server
-npm start
+### Environment Configuration
+Create a `.env` file in the root directory with the following variables:
+```env
+REACT_APP_API_URL=your_api_url_here
+REACT_APP_AUTH_DOMAIN=your_auth_domain_here
+REACT_APP_CLIENT_ID=your_client_id_here
 ```
 
-### Environment Setup
+## 🚀 Deployment
+Deploy the application to your preferred platform:
+- **AWS Amplify**: For scalable hosting with CI/CD integration
+- **Vercel**: For seamless frontend deployment
+- **Netlify**: For static site hosting with easy setup
+- **Firebase Hosting**: For robust Google Cloud integration
 
-Create a `.env` file in the root directory:
-
-```
-REACT_APP_API_URL=your_api_url
-REACT_APP_AUTH_DOMAIN=your_auth_domain
-REACT_APP_CLIENT_ID=your_client_id
-```
-
-## 🚢 Deployment
-
-Deploy to your preferred platform:
-- AWS Amplify
-- Vercel
-- Netlify
-- Firebase Hosting
-
+Refer to the respective platform's documentation for detailed deployment steps.
 
 ## 🤝 Contributing
+We love contributions! To get started:
+1. Fork the repository.
+2. Create a new branch: `git checkout -b feature/your-feature-name`
+3. Commit your changes: `git commit -m "Add your feature"`
+4. Push to the branch: `git push origin feature/your-feature-name`
+5. Open a Pull Request.
 
-We welcome contributions! Check out our [Contributing Guide](./CONTRIBUTING.md) to get started. Whether you're fixing bugs, adding features, or improving documentation - we'd love your help!
+Please read our [Contributing Guide](CONTRIBUTING.md) for more details on code style and submission guidelines.
 
-## 📄 License
+## 📜 License
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## 📬 Contact
+For questions, suggestions, or issues, please open a GitHub Issue or reach out to the kibali-cell team or jonasdeo02@gmail.com.
+
+Happy traveling! ✈️
