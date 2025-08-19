@@ -37,7 +37,7 @@ A React-based platform that streamlines corporate travel — from trip booking t
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/business-travel-app.git
+git clone https://github.com/kibali-cell/business-travel-app.git
 
 # Install dependencies
 cd business-travel-app
